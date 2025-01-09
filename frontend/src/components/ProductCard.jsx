@@ -20,7 +20,7 @@ export const ProductCard = ({
           <span className="text-primary font-bold">₹ {price.toFixed(2)}</span>
           <button
             onClick={() => window.open(amazonUrl, "_blank")}
-            className="bg-black rounded-full p-2 hover:bg-primary text-white transition-colors"
+            className="bg-black rounded-[10px] p-2 hover:bg-primary text-white transition-colors"
           >
             Buy on Amazon
           </button>
