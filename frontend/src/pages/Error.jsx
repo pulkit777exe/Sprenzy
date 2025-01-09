@@ -10,7 +10,7 @@ const ErrorPage = () => {
         <div className="error-description text-lg mt-4 text-gray-600">
           We're sorry, but the page you were looking for doesn't exist. It might have been moved or deleted.
         </div>
-        <Link to="/" className="btn-home mt-6 inline-block bg-primary hover:bg-primary/90 text-white text-lg py-3 px-8 rounded-full transition-all">
+        <Link to="/home" className="btn-home mt-6 inline-block bg-primary hover:bg-primary/90 text-white text-lg py-3 px-8 rounded-full transition-all">
           Go Back to Home
         </Link>
       </div>

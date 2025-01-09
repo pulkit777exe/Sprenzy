@@ -1,4 +1,11 @@
+import { useNavigate } from "react-router";
+
 export const Hero = () => {
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate("/signup")
+  }
+
   return (
     <div className="bg-accent py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -11,7 +18,7 @@ export const Hero = () => {
               Explore our curated selection of premium healthy snacks and foods,
               sourced from nature's finest ingredients.
             </p>
-            <button
+            <button onClick={handleClick}
             className="bg-primary hover:bg-primary/90 text-white py-2 px-4 text-lg rounded"
             >
               Shop Now
