@@ -6,7 +6,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">Royal Choice</h3>
+            <h3 className="text-xl font-bold mb-4">Royal Spice</h3>
             <p className="text-gray-300">
               Bringing nature's goodness to your doorstep
             </p>
@@ -34,7 +34,7 @@ export const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-gray-300">
-              <li>Email: info@royalchoice.com</li>
+              <li>Email: info@royalspice.com</li>
               <li>Phone: (000) 123-4567</li>
               <li>Address: 123 Health Street</li>
             </ul>
@@ -55,7 +55,7 @@ export const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; {new Date().getFullYear()} Royal Choice. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Royal Spice. All rights reserved.</p>
         </div>
       </div>
     </footer>
