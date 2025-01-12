@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
+import axios from 'axios';
 
 const initialFormData = {
-  name: '',
+  title: '',
   description: '',
   brand: '',
-  price: 0,
+  price: 100,
   category: '',
-  image: '',
+  imageUrl: '',
   amazonUrl: '',
 };
 
@@ -25,10 +26,20 @@ const categories = [
 export default function ProductForm({ onSubmit }) {
   const [formData, setFormData] = useState(initialFormData);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData(initialFormData);
+    try {
+      const response = await axios.post('http://localhost:3000/api/v1/admin/create-products', formData, {
+        headers: {
+          'Content-Type': 'application/json',
+        }}
+      )
+      const data = response.data;
+      onSubmit(data);
+      setFormData(initialFormData);
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error);
+    }
   };
 
   const handleChange = (e) => {
@@ -43,14 +54,14 @@ export default function ProductForm({ onSubmit }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Product Name
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Product Title
           </label>
           <input
             type="text"
-            id="name"
-            name="name"
-            value={formData.name}
+            id="title"
+            name="title"
+            value={formData.title}
             onChange={handleChange}
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
@@ -89,7 +100,7 @@ export default function ProductForm({ onSubmit }) {
 
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price ($)
+            Price (₹)
           </label>
           <input
             type="number"
@@ -99,7 +110,7 @@ export default function ProductForm({ onSubmit }) {
             onChange={handleChange}
             required
             min="0"
-            step="0.01"
+            step="5"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
@@ -126,14 +137,14 @@ export default function ProductForm({ onSubmit }) {
         </div>
 
         <div>
-          <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
             Image URL
           </label>
           <input
             type="url"
-            id="image"
-            name="image"
-            value={formData.image}
+            id="imageUrl"
+            name="imageUrl"
+            value={formData.imageUrl}
             onChange={handleChange}
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"

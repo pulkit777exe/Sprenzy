@@ -7,7 +7,7 @@ export const Hero = () => {
   }
 
   return (
-    <div className="bg-accent py-16 md:py-24">
+    <div className="bg-accent py-28 md:py-24">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex-1 text-center md:text-left">

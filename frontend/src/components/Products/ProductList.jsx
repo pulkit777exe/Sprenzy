@@ -8,7 +8,7 @@ export default function ProductList({ products, onDelete }) {
         <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
           <img
             src={product.image}
-            alt={product.name}
+            alt={product.title}
             className="w-full h-48 object-cover"
           />
           <div className="p-4">
