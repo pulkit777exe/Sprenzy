@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import ProductForm from '../components/Products/ProductForm';
-import ProductList from '../components/Products/ProductList';
+import ProductForm from './Products/ProductForm';
+import ProductList from './Products/ProductList';
 import { ShoppingBag } from 'lucide-react';
 
-export default function AdminPage() {
+export default function CreateProducts() {
   const [products, setProducts] = useState([]);
 
   const handleAddProduct = (product) => {

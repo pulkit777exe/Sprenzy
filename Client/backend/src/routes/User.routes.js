@@ -1,5 +1,6 @@
 import express from "express";
 import { UserModel } from "../models/User.models.js";
+import { ProductModel } from "../models/Product.models.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -77,6 +78,16 @@ userRouter.post("/signin", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: MESSAGES.SIGNIN_ERROR });
+    }
+});
+
+userRouter.get("/products",async (req, res)=>{
+    try{
+        const products = await ProductModel.find();
+        res.json(products);        
+    } catch (errir){
+        console.error(error);
+        res.status(500).json({error: "An error occurred while fetching products"});
     }
 });
 

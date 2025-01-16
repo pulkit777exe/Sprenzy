@@ -6,7 +6,7 @@ const initialFormData = {
   title: '',
   description: '',
   brand: '',
-  price: 100,
+  price: 0,
   category: '',
   imageUrl: '',
   amazonUrl: '',
@@ -33,10 +33,14 @@ export default function ProductForm({ onSubmit }) {
         headers: {
           'Content-Type': 'application/json',
         }}
-      )
-      const data = response.data;
-      onSubmit(data);
-      setFormData(initialFormData);
+      );
+      if (response.status === 200) {
+        const data = response.data;
+        onSubmit(data);
+        setFormData(initialFormData);
+      } else {
+        console.error('Server responded with an error:', response.status, response.statusText);
+      }
     } catch (error) {
       console.error('There was a problem with the fetch operation:', error);
     }
@@ -64,7 +68,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.title}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
 
@@ -79,7 +83,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.description}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
 
@@ -94,7 +98,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.brand}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
 
@@ -111,7 +115,7 @@ export default function ProductForm({ onSubmit }) {
             required
             min="0"
             step="5"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
 
@@ -125,7 +129,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.category}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
@@ -147,7 +151,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.imageUrl}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
 
@@ -162,7 +166,7 @@ export default function ProductForm({ onSubmit }) {
             value={formData.amazonUrl}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
       </div>

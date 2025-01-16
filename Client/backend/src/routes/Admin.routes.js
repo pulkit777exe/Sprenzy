@@ -1,10 +1,8 @@
 import { ProductModel } from "../models/Product.models.js";
 import { UserModel } from "../models/User.models.js";
 import express from "express";
-import isValid  from "../middleware/isValid.js";
 
 const adminRouter = express.Router();
-adminRouter.use(isValid);
 
 adminRouter.post("/create-products", async (req, res) => {
     const { title, description, brand, price, category, imageUrl, amazonUrl } = req.body;
@@ -14,7 +12,7 @@ adminRouter.post("/create-products", async (req, res) => {
             error: "Provide all required arguments"
         });
     }
-    const { userId } = req.user || {};
+    const userId = req.user ? req.user.userId : null;
     if (!userId) {
         return res.status(401).json({
             error: "Unauthorized. User not logged in."

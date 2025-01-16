@@ -3,7 +3,9 @@ import SignUp from "./pages/SignUp"
 import SignIn from "./pages/SignIn"
 import Home from "./pages/Home"
 import ErrorPage from "./pages/Error"
-import AdminPage from "./pages/Admin"
+import ContactPage from "./pages/Contact"
+import AboutPage from "./pages/About"
+import ProductsPage from "./pages/Products"
 
 
 function App() {
@@ -12,12 +14,14 @@ function App() {
     <>
       <Router>
         <Routes>
+          <Route path="*" element={<ErrorPage />} />
+          <Route path={"/"} element={<Home />} />
+          <Route path={"/home"} element={<Home />} />
+          <Route path={"/products"} element={<ProductsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/signin" element={<SignIn />} />
-          <Route path={"/home"} element={<Home />} />
-          <Route path={"/"} element={<Home />} />
-          <Route path="*" element={<ErrorPage />} />
-          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </Router>      
     </>

@@ -2,13 +2,13 @@ export const ProductCard = ({
   title,
   description,
   price,
-  image,
+  imageUrl,
   amazonUrl,
 }) => {
   return (
     <div className="bg-white shadow-md overflow-hidden transition-transform hover:-translate-y-1 rounded-[12px] flex flex-col">
       <img
-        src={image}
+        src={imageUrl}
         alt={title}
         className="h-48 object-cover"
       />
