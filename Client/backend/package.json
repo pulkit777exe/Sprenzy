@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon --experimental-modules src/server.js"
   },
-  "author": "",
+  "author": "royal-choice",
   "license": "ISC",
   "description": "",
   "dependencies": {
