@@ -11,9 +11,10 @@ export default function ContactPage(){
                         <h1 className="text-4xl font-bold text-center">Contact Info</h1>
                     </div>
                </div>
-               <div className="mx-auto w-1/2 bg-white p-8 rounded-full shadow-lg mt-8">
+               <div className="mx-auto w-1/2 bg-white p-8 text-center rounded-full shadow-lg mt-8">
                     <div className="">
-                        <p>Contact Description</p>
+                        <p>Email: support@sprenzy.com <br />
+                        Phone: +91 120 416 3238</p>
                     </div>
                </div>
             </div>

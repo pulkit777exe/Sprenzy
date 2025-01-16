@@ -1,7 +1,6 @@
 import { ProductCard } from "./ProductCard";
 import { useEffect, useState } from "react";
 import axios from "axios";
-// Remove dotenv import and config as it's not needed in the frontend
 
 export const ProductGrid = () => {
   const [products, setProducts] = useState([]);

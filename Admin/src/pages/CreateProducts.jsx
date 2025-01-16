@@ -2,27 +2,50 @@ import React, { useState } from 'react';
 import ProductForm from './Products/ProductForm';
 import ProductList from './Products/ProductList';
 import { ShoppingBag } from 'lucide-react';
+import axios from 'axios';
 
 export default function CreateProducts() {
   const [products, setProducts] = useState([]);
 
-  const handleAddProduct = (product) => {
-    setProducts([...products, product]);
+  const handleAddProduct = async (product) => {
+    try {
+      const response = await axios.post('/api/products', product);
+      setProducts([...products, response.data]);
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
   };
 
-  const handleDeleteProduct = (index) => {
-    setProducts(products.filter((_, i) => i !== index));
+  const handleDeleteProduct = async (index) => {
+    try {
+      const productToDelete = products[index];
+      await axios.delete(`/api/products/${productToDelete.id}`);
+      setProducts(products.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const handleUpdateProduct = async (index, updatedProduct) => {
+    try {
+      const productToUpdate = products[index];
+      const response = await axios.put(`/api/products/${productToUpdate.id}`, updatedProduct);
+      const updatedProducts = [...products];
+      updatedProducts[index] = response.data;
+      setProducts(updatedProducts);
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
+      <div className="bg-white shadow"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <ShoppingBag className="h-8 w-8 text-primary" />
               <h1 className="ml-3 text-2xl font-bold text-gray-900">Product Admin Panel</h1>
-            </div>
             <div className="text-sm text-gray-600">
               {products.length} Products
             </div>
@@ -40,7 +63,7 @@ export default function CreateProducts() {
           </div>
           <div className="lg:col-span-2">
             <h2 className="text-lg font-medium text-gray-900 mb-6">Product List</h2>
-            <ProductList products={products} onDelete={handleDeleteProduct} />
+            <ProductList products={products} onDelete={handleDeleteProduct} onUpdate={handleUpdateProduct} />
           </div>
         </div>
       </main>

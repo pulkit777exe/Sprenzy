@@ -85,7 +85,7 @@ userRouter.get("/products",async (req, res)=>{
     try{
         const products = await ProductModel.find();
         res.json(products);        
-    } catch (errir){
+    } catch (error){
         console.error(error);
         res.status(500).json({error: "An error occurred while fetching products"});
     }

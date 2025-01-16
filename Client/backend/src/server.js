@@ -6,7 +6,7 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:5173" || import.meta.env.VITE_APP_URL, 
+    origin: ["http://localhost:5173", "http://localhost:5174", process.env.VITE_APP_URL], 
     credentials: true
 }));
 app.use(express.urlencoded({ extended: true }));
@@ -26,7 +26,7 @@ app.get("/products", async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: "Error fetching products" });
     }
-  });
+  }); 
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
