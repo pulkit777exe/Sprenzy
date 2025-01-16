@@ -4,7 +4,8 @@
   "main": "/src/server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon --experimental-modules src/server.js"
+    "start": "nodemon --experimental-modules src/server.js",
+    "build": "node --experimental-modules src/server.js",
   },
   "author": "",
   "license": "ISC",
