@@ -7,7 +7,8 @@ const ProductSchema = new Schema({
     price: { type: Number, required: true },
     category: { type: String },
     imageUrl: { type: String, required: true },
-    amazonUrl: { type: String, required: true }
+    amazonUrl: { type: String, required: true },
+    user: {type: String }
 }, { timestamps: true });
 
 export const ProductModel = model("Products", ProductSchema);

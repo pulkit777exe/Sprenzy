@@ -1,6 +1,7 @@
 import { ProductCard } from "./ProductCard";
 import { useEffect, useState } from "react";
 import axios from "axios";
+// Remove dotenv import and config as it's not needed in the frontend
 
 export const ProductGrid = () => {
   const [products, setProducts] = useState([]);
@@ -8,7 +9,7 @@ export const ProductGrid = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`${BACKEND_API_URL}/products`, { withCredentials: true });
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/products`, { withCredentials: true });
         setProducts(response.data);
       } catch (error) {
         console.error("Error fetching products:", error);
