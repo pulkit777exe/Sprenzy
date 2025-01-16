@@ -6,7 +6,7 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true
 }));
 app.use(express.urlencoded({ extended: true }));
