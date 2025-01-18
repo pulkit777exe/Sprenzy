@@ -32,7 +32,9 @@ export const Navbar = () => {
 
           <div className="flex items-center space-x-4">
             <button className="relative bg-transparent border-none">
-              <ShoppingCart className="h-5 w-5" />
+              <a href="/cart">
+                <ShoppingCart className="h-5 w-5 text-secondary hover:text-primary transition-colors" />
+              </a>
               <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                 0
               </span>

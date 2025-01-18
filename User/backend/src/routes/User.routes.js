@@ -91,4 +91,40 @@ userRouter.get("/products",async (req, res)=>{
     }
 });
 
+userRouter.delete("/deleteProduct/:id", async (req, res) => {
+    try {
+        const product = await UserModel.findOne({ userCart: req.params.id });
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+        res.json({ message: "Product deleted from cart successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "An error occurred while deleting product from cart" });
+    }
+});
+
+userRouter.get("/user/products", async (req, res) => {
+    username = req.body.username;
+    try{
+        const user = await UserModel.findOne(username);
+        if(!user){
+            return res.status(404).json({error: "User not found"});
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({error: "An error occurred while fetching user products"});
+    }
+
+    try {
+        const products = await UserModel.findById(req.user._id).populate("userCart");
+        res.json(products);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching products" });
+    }
+
+    res.json({ message: "User products fetched successfully" });
+});
+
 export { userRouter };

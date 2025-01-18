@@ -43,13 +43,13 @@ export default function CreateProducts() {
       <div className="bg-white shadow"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
+            <div className="flex justify-around items-center">
               <ShoppingBag className="h-8 w-8 text-primary" />
               <h1 className="ml-3 text-2xl font-bold text-gray-900">Product Admin Panel</h1>
+            </div>
             <div className="text-sm text-gray-600">
               {products.length} Products
             </div>
-          </div>
         </div>
       </div>
 
