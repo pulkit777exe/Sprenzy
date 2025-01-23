@@ -14,29 +14,13 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 import { userRouter } from './routes/User.routes.js';
-import { adminRouter } from './routes/Admin.routes.js';
 import { ProductModel } from './models/Product.models.js';
 import { UserModel } from './models/User.models.js';
+import productRouter from './routes/product.routes.js'
 app.use("/api/v1/user",userRouter);
-app.use("/api/v1/admin",adminRouter);
+app.use("/api/v1/admin",productRouter);
 
-app.get("/products", async (req, res) => {
-    try {
-      const products = await ProductModel.find();
-      res.json(products);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching products" });
-    }
-  }); 
 
-app.get("/user/products",async (req, res) => {
-  try{
-    const products = await UserModel.findById(req.user._id).populate("userCart");
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching products"});
-  }
-})
 
 app.post("/cart", async (req, res) => {
   const { title, price, imageUrl } = req.body;

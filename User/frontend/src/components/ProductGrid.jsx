@@ -8,7 +8,10 @@ export const ProductGrid = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/products`, { withCredentials: true });
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/admin/products`,
+          { withCredentials: true }
+        );
         setProducts(response.data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -26,20 +29,14 @@ export const ProductGrid = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map((product) => (
-            <ProductCard 
-
-            key={product.id}
-        
-            title={product.title}
-        
-            description={product.description}
-        
-            price={product.price}
-        
-            imageUrl={product.imageUrl}
-        
-            amazonUrl={product.amazonUrl}
-         />
+            <ProductCard
+              key={product._id}
+              title={product.title}
+              description={product.description}
+              price={product.price}
+              imageUrl={product.imageUrl}
+              amazonUrl={product.amazonUrl}
+            />
           ))}
         </div>
       </div>
