@@ -4,12 +4,8 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-<<<<<<< HEAD:User/backend/package.json
-    "start": "nodemon src/server.js"
-=======
     "start": "nodemon --experimental-modules src/server.js",
-    "build": "node --experimental-modules src/server.js",
->>>>>>> 0a8d73c4d8553bdd90ce19f6cf6eadbf7c4a0dff:Client/backend/package.json
+    "build": "node --experimental-modules src/server.js"
   },
   "author": "royal-choice",
   "license": "ISC",

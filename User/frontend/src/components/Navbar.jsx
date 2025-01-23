@@ -10,7 +10,7 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="fixed w-screen bg-white shadow-sm">
+    <nav className="fixed w-screen bg-white shadow-sm z-10">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
