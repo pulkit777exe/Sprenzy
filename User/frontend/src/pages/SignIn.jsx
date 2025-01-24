@@ -12,7 +12,6 @@ export default function SignIn() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Sign in using :", { email, password });
 
         if (email && password) {
             try {

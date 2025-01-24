@@ -7,124 +7,150 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const saltRounds = 10;
-const JWT_SECRET = process.env.JWT_SECRET;
 const userRouter = express.Router();
-
-userRouter.use(express.json());
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const MESSAGES = {
-    MISSING_FIELDS: "Provide username, password, and email",
-    USER_EXISTS: "User already exists with that email",
-    USER_CREATION_ERROR: "Error while creating user",
-    USER_CREATED: "User created successfully",
-    SIGNIN_SUCCESS: "Sign-in successful",
-    INVALID_CREDENTIALS: "Invalid credentials",
-    USER_NOT_FOUND: "User not found",
-    SIGNIN_ERROR: "An error occurred during sign-in",
-    SIGNUP_ERROR: "An error occurred during signup"
+  MISSING_FIELDS: "Provide username, password, and email",
+  USER_EXISTS: "User already exists with that email",
+  USER_CREATION_ERROR: "Error while creating user",
+  USER_CREATED: "User created successfully",
+  SIGNIN_SUCCESS: "Sign-in successful",
+  INVALID_CREDENTIALS: "Invalid credentials",
+  USER_NOT_FOUND: "User not found",
+  SIGNIN_ERROR: "An error occurred during sign-in",
+  SIGNUP_ERROR: "An error occurred during signup",
+  PRODUCT_NOT_FOUND: "Product not found",
+  PRODUCT_NOT_IN_CART: "Product not in cart",
+  DELETE_SUCCESS: "Product deleted from cart successfully"
 };
+
+// JWT Authentication Middleware
+const authenticateUser = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(403).json({ error: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded.userData;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: "Invalid or expired token" });
+  }
+};
+
+// Signup Route
 userRouter.post("/signup", async (req, res) => {
-    const { username, password, email } = req.body;
-    if (!username || !password || !email) {
-        return res.status(400).json({ message: MESSAGES.MISSING_FIELDS });
+  const { username, password, email } = req.body;
+  if (!username || !password || !email) {
+    return res.status(400).json({ message: MESSAGES.MISSING_FIELDS });
+  }
+
+  try {
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: MESSAGES.USER_EXISTS });
     }
 
-    try {
-        const existingUser = await UserModel.findOne({ email });
-        if (existingUser) {
-            console.log("User already exists with that email");
-            return res.status(400).json({ message: MESSAGES.USER_EXISTS });
-        }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-        const salt = await bcrypt.genSalt(saltRounds);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const user = await UserModel.create({ username, password: hashedPassword, email });
-
-        if (!user) {
-            return res.status(500).json({ error: MESSAGES.USER_CREATION_ERROR });
-        }
-
-        res.status(201).json({ message: MESSAGES.USER_CREATED, Admin: user.isAdmin });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: MESSAGES.SIGNUP_ERROR });
+    const user = await UserModel.create({ username, password: hashedPassword, email });
+    if (!user) {
+      return res.status(500).json({ error: MESSAGES.USER_CREATION_ERROR });
     }
+
+    res.status(201).json({ message: MESSAGES.USER_CREATED });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: MESSAGES.SIGNUP_ERROR });
+  }
 });
 
+// Sign-in Route
 userRouter.post("/signin", async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ message: MESSAGES.MISSING_FIELDS });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: MESSAGES.MISSING_FIELDS });
+  }
+
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: MESSAGES.USER_NOT_FOUND });
     }
 
-    try {
-        const user = await UserModel.findOne({ email });
-
-        if (!user) {
-            return res.status(403).json({ error: MESSAGES.USER_NOT_FOUND });
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-            return res.status(403).json({ error: MESSAGES.INVALID_CREDENTIALS });
-        }
-
-        const token = jwt.sign({ userId: user._id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
-
-        res.status(200).json({ message: MESSAGES.SIGNIN_SUCCESS, token });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: MESSAGES.SIGNIN_ERROR });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: MESSAGES.INVALID_CREDENTIALS });
     }
+
+    const tokenData = {
+      userId: user._id,
+      userData: user
+    };
+
+    const token = jwt.sign(tokenData, JWT_SECRET, { expiresIn: "1d" });
+    res.status(200).json({ message: MESSAGES.SIGNIN_SUCCESS, token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: MESSAGES.SIGNIN_ERROR });
+  }
 });
 
-userRouter.get("/products",async (req, res)=>{
-    try{
-        const products = await ProductModel.find();
-        res.json(products);        
-    } catch (error){
-        console.error(error);
-        res.status(500).json({error: "An error occurred while fetching products"});
-    }
+// Get all Products Route (Authenticated)
+userRouter.get("/products", authenticateUser, async (req, res) => {
+  try {
+    const products = await ProductModel.find();
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "An error occurred while fetching products" });
+  }
 });
 
-userRouter.delete("/deleteProduct/:id", async (req, res) => {
-    try {
-        const product = await UserModel.findOne({ userCart: req.params.id });
-        if (!product) {
-            return res.status(404).json({ error: "Product not found" });
-        }
-        res.json({ message: "Product deleted from cart successfully" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "An error occurred while deleting product from cart" });
-    }
-});
-
+// Get User's Cart Products (Authenticated)
 userRouter.get("/user/products", async (req, res) => {
-    username = req.body.username;
-    try{
-        const user = await UserModel.findOne(username);
-        if(!user){
-            return res.status(404).json({error: "User not found"});
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({error: "An error occurred while fetching user products"});
+  try {
+    const userId = req.user.id;
+    const user = await UserModel.findById(userId).populate('userCart');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user.userCart);
+  } catch (error) {
+    console.error('Error fetching user cart:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete Product from Cart Route (Authenticated)
+userRouter.delete("/deleteProduct/:id", authenticateUser, async (req, res) => {
+  try {
+    const product = await ProductModel.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
-    try {
-        const products = await UserModel.findById(req.user._id).populate("userCart");
-        res.json(products);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching products" });
+    const user = await UserModel.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: MESSAGES.USER_NOT_FOUND });
     }
 
-    res.json({ message: "User products fetched successfully" });
+    if (!user.userCart.includes(req.params.id)) {
+      return res.status(400).json({ error: MESSAGES.PRODUCT_NOT_IN_CART });
+    }
+
+    user.userCart.pull(req.params.id);
+    await user.save();
+
+    res.json({ message: MESSAGES.DELETE_SUCCESS });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "An error occurred while deleting product from cart" });
+  }
 });
 
 export { userRouter };

@@ -15,7 +15,6 @@ export default function SignUp() {
         e.preventDefault();
         setErrorMessage('');
         setSuccessMessage('');
-        console.log("Sign in using :", { username, email, password });
         if (email && password && username) {
             try {
                 const response = await axios.post("http://localhost:3000/api/v1/user/signup", {
