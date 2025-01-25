@@ -12,22 +12,10 @@ const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.VITE_APP_URL;
 
 app.use(express.json());
-app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", FRONTEND_URL);
-    next();
-})
-// app.use(cors({
-//     origin: [
-//         process.env.VITE_APP_URL, 
-//         "http://localhost:5173", 
-//         "http://localhost:5174", 
-//         "35.160.120.126", 
-//         "44.233.151.27", 
-//         "34.211.200.85"
-//     ],
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     allowedHeaders: ["Content-Type"]
-// }));
+app.use(cors({
+    origin: process.env.VITE_APP_URL,
+    optionsSuccessStatus: 200
+}));
 
 app.use(express.urlencoded({ extended: true }));
 
