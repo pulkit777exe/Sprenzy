@@ -9,7 +9,7 @@ import productRouter from './routes/Product.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FRONTEND_URL = process.env.VITE_APP_URL || "http://localhost:3000";
+const FRONTEND_URL = process.env.VITE_APP_URL;
 
 app.use(express.json());
 app.use((req, res, next) => {
