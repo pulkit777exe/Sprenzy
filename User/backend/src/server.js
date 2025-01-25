@@ -12,11 +12,24 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", process.env.VITE_APP_URL, "35.160.120.126" ,
-        "44.233.151.27" ,
-        "34.211.200.85" ], 
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            "http://localhost:5173", 
+            "http://localhost:5174", 
+            process.env.VITE_APP_URL, 
+            "35.160.120.126", 
+            "44.233.151.27", 
+            "34.211.200.85"
+        ];
+        if (allowedOrigins.includes(origin) || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
+
 app.use(express.urlencoded({ extended: true }));
 
 connectDB();
