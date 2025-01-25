@@ -9,7 +9,7 @@ export const ProductGrid = () => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/products`,
+          `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/product/products`,
           { withCredentials: true }
         );
         setProducts(response.data);

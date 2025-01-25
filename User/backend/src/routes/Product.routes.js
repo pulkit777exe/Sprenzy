@@ -7,6 +7,6 @@ productRoutes.post("/create-products", createProduct);
 productRoutes.delete("/delete-product/:id", deleteProducts);    
 productRoutes.put("/update-product/:id", updateProducts);
 productRoutes.get("/products", viewAllProducts);
-productRoutes.get("/user/products", viewUserProducts);
+productRoutes.get("/userProducts", viewUserProducts);
 
 export default productRoutes;

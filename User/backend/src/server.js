@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from './db/index.js';
 import { userRouter } from "./routes/User.routes.js";
-import productRouter from './routes/product.routes.js';
+import productRouter from './routes/Product.routes.js';
 
 
 const app = express();
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 app.use("/api/v1/user", userRouter);
-app.use("/api/v1/admin", productRouter);
+app.use("/api/v1/product", productRouter);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
