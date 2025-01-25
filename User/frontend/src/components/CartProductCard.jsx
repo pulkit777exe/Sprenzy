@@ -1,5 +1,4 @@
 import { Trash2 } from "lucide-react";
-import axios from "axios";
 
 export const CartProductCard = ({
   product, 

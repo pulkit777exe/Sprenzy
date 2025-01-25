@@ -12,7 +12,9 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", process.env.VITE_APP_URL], 
+    origin: ["http://localhost:5173", "http://localhost:5174", process.env.VITE_APP_URL, "35.160.120.126" ,
+        "44.233.151.27" ,
+        "34.211.200.85" ], 
     credentials: true
 }));
 app.use(express.urlencoded({ extended: true }));

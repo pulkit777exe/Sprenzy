@@ -14,7 +14,7 @@ export const ProductCard = ({
     setIsAdding(true); 
 
     try {
-      const response = await fetch('http://localhost:3000/api/v1/user/cart/add', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

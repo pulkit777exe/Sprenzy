@@ -6,21 +6,19 @@ export default function Cart() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to delete a product from the cart
   async function deleteProduct(productId) {
     try {
-      await axios.delete(`http://localhost:3000/api/v1/user/deleteProduct/${productId}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/deleteProduct/${productId}`);
       setProducts((prevProducts) => prevProducts.filter((product) => product._id !== productId));
     } catch (error) {
       console.error('Error deleting product:', error);
     }
   }
 
-  // Fetch the products in the cart when the component mounts
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/user/products', {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/products`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -37,7 +35,6 @@ export default function Cart() {
     fetchProducts();
   }, []);
 
-  // Ensure that all product prices are numbers and safely calculate the total
   const totalPrice = products.reduce((acc, product) => acc + (product.price || 0), 0).toFixed(2);
 
   return (
@@ -50,7 +47,6 @@ export default function Cart() {
         </div>
       ) : (
         <div className="mx-auto p-4 flex justify-around">
-          {/* Product List Section */}
           <div className="flex flex-col gap-4 w-2/3">
             {products.length === 0 ? (
               <p className="text-center text-xl">Your cart is empty</p>
@@ -65,7 +61,6 @@ export default function Cart() {
             )}
           </div>
 
-          {/* Checkout Section */}
           <div className="border border-gray-300 p-4 bg-white rounded-lg w-1/3">
             <div className="text-center text-xl font-bold">
               Total

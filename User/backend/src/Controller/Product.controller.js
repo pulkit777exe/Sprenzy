@@ -19,14 +19,6 @@ const createProduct = async (req, res) => {
   }
 
   try {
-    // const user = await UserModel.findById(userId);
-
-    // if (!user || !user.isAdmin) {
-    //     return res.status(403).json({
-    //         error: "Access denied. Admins only."
-    //     });
-    // }
-
     const product = new ProductModel({
       title,
       description,
