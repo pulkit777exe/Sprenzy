@@ -20,7 +20,6 @@ app.use(cors({
         "44.233.151.27", 
         "34.211.200.85"
     ],
-    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"]
 }));

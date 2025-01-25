@@ -1,5 +1,6 @@
 import { ProductModel } from "../models/Product.models.js";
 import { UserModel } from "../models/User.models.js";
+
 const createProduct = async (req, res) => {
   const { title, description, brand, price, category, imageUrl, amazonUrl } =
     req.body;
@@ -138,6 +139,7 @@ const viewAllProducts = async (req, res) => {
     const products = await ProductModel.find();
     res.json(products);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Error fetching products" });
   }
 };
