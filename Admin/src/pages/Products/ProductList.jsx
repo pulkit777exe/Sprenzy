@@ -1,19 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Trash2 } from 'lucide-react';
+import axios from "axios";
 
-export default function ProductList({ products, onDelete }) {
+export default function ProductList({ products: initialProducts, onDelete }) {
+  const [products, setProducts] = useState(initialProducts || []);
+
+  useEffect(() => {
+    if (!initialProducts?.length) {
+      const fetchProducts = async () => {
+        try {
+          const response = await axios.get(
+            `${import.meta.env.VITE_BACKEND_URL}api/v1/user/products`,
+            { withCredentials: true }
+          );
+          setProducts(response.data);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
+
+      fetchProducts();
+    }
+  }, [initialProducts]);
+
+  const handleDelete = (indexToDelete) => {
+    const updatedProducts = products.filter((_, index) => index !== indexToDelete);
+    setProducts(updatedProducts);
+    
+    onDelete?.(indexToDelete);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {products.map((product, index) => (
-        <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
+      {products.map((product) => (
+        <div key={product._id} className="bg-white rounded-lg shadow overflow-hidden">
           <img
-            src={product.image}
+            src={product.imageUrl}
             alt={product.title}
             className="w-full h-48 object-cover"
           />
           <div className="p-4">
             <div className="flex justify-between items-start">
-              <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{product.title}</h3>
               <span className="text-lg font-bold text-primary">₹{product.price.toFixed(2)}</span>
             </div>
             <p className="text-sm text-gray-600 mt-1">{product.brand}</p>
@@ -32,7 +60,7 @@ export default function ProductList({ products, onDelete }) {
                   <ExternalLink className="h-5 w-5" />
                 </a>
                 <button
-                  onClick={() => onDelete(index)}
+                  onClick={() => handleDelete(product.id)}
                   className="text-gray-500 hover:text-red-600"
                 >
                   <Trash2 className="h-5 w-5" />
