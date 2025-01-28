@@ -133,9 +133,14 @@ export const fetchFeaturedProducts = async (req, res) => {
   try {
     const products = await ProductModel.find().limit(16);
     console.log("Fetching featured products");
+    if(products.length === 0) {
+      return res.status(404).json({message: "No featured products found"});
+    }
+
     if(!products.ok) {
       res.json(products);
     }
+    
   } catch (error) {
     console.error(error);
     res
