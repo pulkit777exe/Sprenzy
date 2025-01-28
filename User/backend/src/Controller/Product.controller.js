@@ -1,7 +1,7 @@
 import { ProductModel } from "../models/Product.models.js";
 import { UserModel } from "../models/User.models.js";
 
-const createProduct = async (req, res) => {
+export const createProduct = async (req, res) => {
   const { title, description, brand, price, category, imageUrl, amazonUrl } =
     req.body;
 
@@ -43,25 +43,10 @@ const createProduct = async (req, res) => {
   }
 };
 
-const deleteProducts = async (req, res) => {
+export const deleteProducts = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user ? req.user.userId : null;
-
-  if (!userId) {
-    return res.status(401).json({
-      error: "Unauthorized. User not logged in.",
-    });
-  }
 
   try {
-    const user = await UserModel.findById(userId);
-
-    if (!user || !user.isAdmin) {
-      return res.status(403).json({
-        error: "Access denied. Admins only.",
-      });
-    }
-
     const product = await ProductModel.findByIdAndDelete(id);
 
     if (!product) {
@@ -81,7 +66,7 @@ const deleteProducts = async (req, res) => {
   }
 };
 
-const updateProducts = async (req, res) => {
+export const updateProducts = async (req, res) => {
   const { id } = req.params;
   const { title, description, brand, price, category, imageUrl, amazonUrl } =
     req.body;
@@ -134,7 +119,7 @@ const updateProducts = async (req, res) => {
   }
 };
 
-const viewAllProducts = async (req, res) => {
+export const viewAllProducts = async (req, res) => {
   try {
     const products = await ProductModel.find();
     res.json(products);
@@ -144,21 +129,46 @@ const viewAllProducts = async (req, res) => {
   }
 };
 
-const viewUserProducts = async (req, res) => {
+export const fetchFeaturedProducts = async (req, res) => {
   try {
-    const products = await UserModel.findById(req.user._id).populate(
-      "userCart"
-    );
+    const products = await ProductModel.find().limit(16);
+    console.log("Fetching featured products");
+    if(!products.ok) {
+      res.json(products);
+    }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error fetching products" });
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching products" });
   }
 };
 
-export  {
-  createProduct,
-  deleteProducts,
-  updateProducts,
-  viewAllProducts,
-  viewUserProducts,
+export const viewUserProducts = async (req, res) => {
+  const email = req.body.email;
+  if(!email) {
+    res.status(403).json({
+      error: "You are not signed in"
+    })
+  }
+
+  try{
+    const user = UserModel.find({email: email});
+
+    if(!user) {
+      res.status(403).json({
+        error: "User not found"
+      })
+    }
+
+    const products = await UserModel.findById(req.user._id).populate(
+      "userCart"
+    );
+    res.json(products);
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Internal server error"
+    })
+  }
 };
