@@ -131,7 +131,7 @@ export const viewAllProducts = async (req, res) => {
 
 export const fetchFeaturedProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find().limit(16);
+    const products = await ProductModel.find().limit(12);
     console.log("Fetching featured products");
 
     if (products.length === 0) {
