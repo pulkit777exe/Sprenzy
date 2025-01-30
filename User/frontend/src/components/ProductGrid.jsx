@@ -4,7 +4,7 @@ import axios from "axios";
 
 export const ProductGrid = () => {
   const [products, setProducts] = useState([]);
-  const [error, setError] = useState(null);  // Added error state
+  const [error, setError] = useState(null); 
 
   const fetchProducts = async () => {
     try {
@@ -15,7 +15,7 @@ export const ProductGrid = () => {
       setProducts(response.data);
     } catch (error) {
       console.error("Error fetching products:", error);
-      setError("An error occurred while fetching products. Please try again later."); // Set error message
+      setError("An error occurred while fetching products. Please try again later."); 
     }
   };
 
