@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { ShoppingBag, Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router";
-import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 export default function SignIn() {
     const [email, setEmail] = useState('');
@@ -9,38 +10,31 @@ export default function SignIn() {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const navigate = useNavigate();
+    const { login } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
 
-        if (email && password) {
-            try {
-                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/signin`, {
-                    email,
-                    password,
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                if (response.status === 200) {
-                    const data = response.data;
-                    console.log('Sign in successful:', data);
-                    setSuccessMessage('Sign in successful!');
-                    navigate("/home");
-                } else if(response.Admin === true){
-                    console.log('Signed in successfully as admin:', data);
-                    setSuccessMessage('Signed in successfully as admin!');
-                    navigate("/admin");
-                } else {
-                    setErrorMessage('Sign in failed: ' + response.statusText);
-                }
-            } catch (error) {
-                console.error('Error during sign in:', error);
-                setErrorMessage('Error during sign in: ' + error.message);
+        try {
+            if (!email || !password) {
+                toast.error("Please provide both email and password");
+                return;
             }
-        } else {
-            setErrorMessage("Enter valid credentials.");
+
+            const { user } = await login(email, password);
+            
+            if (user) {
+                toast.success(`Welcome back, ${user.username}!`);
+                navigate("/home");
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            const errorMessage = error.response?.data?.message || "Failed to sign in";
+            toast.error(errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -130,9 +124,10 @@ export default function SignIn() {
 
                         <button
                             type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-colors duration-200"
+                            disabled={isLoading}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-colors duration-200 disabled:opacity-50"
                         >
-                            Sign in
+                            {isLoading ? "Signing in..." : "Sign in"}
                         </button>
 
                         <div className="text-center text-sm">
