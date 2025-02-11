@@ -11,7 +11,7 @@ const FRONTEND_URL = process.env.VITE_APP_URL;
 
 
 app.use(cors({
-  origin: 'https://royal-choice.netlify.app',
+  origin: FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 }))

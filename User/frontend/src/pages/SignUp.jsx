@@ -1,44 +1,35 @@
 import React, { useState } from "react";
 import { ShoppingBag, Mail, Lock, UserRound } from "lucide-react";
 import { useNavigate } from "react-router";
-import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 export default function SignUp() {
     const [username, setUserName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { signup } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrorMessage('');
-        setSuccessMessage('');
-        if (email && password && username) {
-            try {
-                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/signup`, {
-                    username,
-                    email,
-                    password,
-                },{
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                if (response.status < 300) {
-                    setSuccessMessage("Sign up successful! Redirecting to home...");
-                    setTimeout(() => {
-                        navigate("/home");
-                    }, 2000);
-                } else {
-                    setErrorMessage("Failed to sign up.");
-                }
-            } catch (error) {
-                setErrorMessage("Error: " + error.message);
+        setIsLoading(true);
+
+        try {
+            if (!email || !password || !username) {
+                toast.error("Please fill in all fields");
+                return;
             }
-        } else {
-            setErrorMessage("Enter valid credentials.");
+
+            await signup(username, email, password);
+            toast.success("Successfully signed up! Please sign in.");
+            navigate("/signin");
+        } catch (error) {
+            console.error('Signup error:', error);
+            toast.error(error.response?.data?.message || "Failed to sign up");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -60,16 +51,6 @@ export default function SignUp() {
                         </p>
                     </div>
                     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                        {errorMessage && (
-                            <div className="text-red-500 text-sm bg-accent text-center">
-                                {errorMessage}
-                            </div>
-                        )}
-                        {successMessage && (
-                            <div className="text-green-500 text-sm bg-accent text-center">
-                                {successMessage}
-                            </div>
-                        )}
                         <div className="space-y-4">
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-gray-700">Name</label>
@@ -138,9 +119,10 @@ export default function SignUp() {
 
                         <button
                             type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-colors duration-200"
+                            disabled={isLoading}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-colors duration-200 disabled:opacity-50"
                         >
-                            Sign Up
+                            {isLoading ? "Signing up..." : "Sign Up"}
                         </button>
                         <div className="text-center text-sm">
                             <span className="text-secondary">Already have an account?</span>

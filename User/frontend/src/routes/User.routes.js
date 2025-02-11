@@ -1,0 +1,1 @@
+userRouter.get("/cartProducts", verifyJWT, getCartItems);
