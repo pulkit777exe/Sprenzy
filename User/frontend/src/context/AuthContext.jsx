@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const response = await axios.get('http://localhost:8000/api/v1/user/verify', {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/user/signin', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/signin`, {
         email,
         password
       });

@@ -25,7 +25,7 @@ export const ProductCard = ({
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `http://localhost:8000/api/v1/user/addProduct/${_id}`,
+        `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/addProduct/${_id}`,
         {},
         {
           headers: {

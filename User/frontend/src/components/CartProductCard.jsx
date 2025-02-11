@@ -9,7 +9,7 @@ export const CartProductCard = ({
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8000/api/v1/user/cart/${product._id}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/cart/${product._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

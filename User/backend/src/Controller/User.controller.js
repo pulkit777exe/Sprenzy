@@ -3,7 +3,7 @@ import { ProductModel } from "../models/Product.models.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.VITE_JWT_SECRET;
+// const JWT_SECRET = process.env.VITE_JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1d";
 const SALT_ROUNDS = 10;
 
@@ -139,8 +139,8 @@ export const signin = async (req, res) => {
         userId: user._id,
         email: user.email
       },
-      process.env.VITE_JWT_SECRET,
-      { expiresIn: '24h' }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     // Send response

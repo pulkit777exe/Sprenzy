@@ -15,7 +15,7 @@ export const Navbar = () => {
     const fetchCartItems = async () => {
       try {
         const token = localStorage.getItem('token'); // Ensure you're using the correct token
-        const response = await axios.get('http://localhost:8000/api/v1/user/cartProducts', {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/cartProducts`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
