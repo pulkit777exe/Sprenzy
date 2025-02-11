@@ -7,7 +7,7 @@ import { productRouter } from './routes/Product.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FRONTEND_URL = process.env.VITE_APP_URL;
+const FRONTEND_URL = "https://royal-choice.netlify.app";
 
 app.use(cors({
   origin: FRONTEND_URL,
