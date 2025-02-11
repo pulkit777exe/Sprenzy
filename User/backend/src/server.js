@@ -9,15 +9,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.VITE_APP_URL;
 
-
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: `${FRONTEND_URL}`,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 }))
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", `${FRONTEND_URL}`);
+  next();
+});
 
 connectDB();
 
