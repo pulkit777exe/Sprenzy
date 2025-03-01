@@ -13,7 +13,7 @@ export default function ProductsPage() {
         const fetchProducts = async () => {
             try {
                 const response = await axios.get(
-                    `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/product/featuredProducts`
+                    `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`
                 );
                 console.log("Products fetched:", response.data);
                 setProducts(response.data);
