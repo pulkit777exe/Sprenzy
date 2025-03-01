@@ -16,9 +16,7 @@ app.post('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.VITE_APP_URL 
-    : ["http://localhost:5173", "https://royal-choice.netlify.app"],
+  origin: "https://royal-choice.netlify.app",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
