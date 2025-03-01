@@ -1,25 +1,40 @@
-import express from "express";
+import { Router } from "express";
 import { 
     signin, 
     signup, 
-    cartProducts, 
-    deleteThisProduct, 
+    verifyToken, 
+    googleAuth,
     addToCart, 
+    deleteProductFromCart, 
     getCartItems,
-    verifyToken
+    updateCartItemQuantity,
+    getUserProfile,
+    updateUserProfile,
+    addUserAddress,
+    updateUserAddress,
+    deleteUserAddress
 } from "../Controller/User.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
-const userRouter = express.Router();
+const userRouter = Router();
 
-userRouter.post("/signup", signup);
+// Auth routes
 userRouter.post("/signin", signin);
-
-// Protected cart routes
-userRouter.post("/addProduct/:productId", verifyJWT, addToCart);
-userRouter.get("/cart", verifyJWT, deleteThisProduct);
-userRouter.delete("/cart/:productId", verifyJWT, deleteThisProduct);
-userRouter.get("/cartProducts", verifyJWT, getCartItems);
+userRouter.post("/signup", signup);
+userRouter.post("/google-auth", googleAuth);
 userRouter.get("/verify", verifyJWT, verifyToken);
+
+// Cart routes
+userRouter.post("/addProduct/:id", verifyJWT, addToCart);
+userRouter.delete("/cart/:id", verifyJWT, deleteProductFromCart);
+userRouter.get("/cartProducts", verifyJWT, getCartItems);
+userRouter.put("/cart/:id/quantity", verifyJWT, updateCartItemQuantity);
+
+// Profile routes
+userRouter.get("/profile", verifyJWT, getUserProfile);
+userRouter.put("/profile", verifyJWT, updateUserProfile);
+userRouter.post("/address", verifyJWT, addUserAddress);
+userRouter.put("/address/:addressId", verifyJWT, updateUserAddress);
+userRouter.delete("/address/:addressId", verifyJWT, deleteUserAddress);
 
 export { userRouter };

@@ -1,101 +1,145 @@
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, ExternalLink, Plus, Minus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import PropTypes from 'prop-types';
 
 export const CartProductCard = ({
   product, 
   onDelete,
+  onUpdateQuantity,
 }) => {
+  const [quantity, setQuantity] = useState(product.quantity || 1);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (product.quantity) {
+      setQuantity(product.quantity);
+    }
+  }, [product.quantity]);
+
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/cart/${product._id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${product._id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
       onDelete(product._id);
+      toast.success('Product removed from cart');
     } catch (error) {
       console.error('Error deleting product:', error);
-      // Optionally, show an error message to the user
+      toast.error('Failed to remove product from cart');
     }
   };
 
+  const handleQuantityChange = async (newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    setQuantity(newQuantity);
+    setIsUpdating(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${product._id}/quantity`,
+        { quantity: newQuantity },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      onUpdateQuantity(product._id, newQuantity);
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      toast.error('Failed to update quantity');
+      setQuantity(product.quantity || 1);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const {
+    title = 'Product',
+    price = '0',
+    imageUrl = 'https://placehold.co/600x400',
+    amazonUrl = '#',
+    brand = 'Unknown',
+    description = 'No description available'
+  } = product || {};
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 flex justify-between items-center">
-      <div className="flex gap-4">
-        <img 
-          src={product.imageUrl} 
-          alt={product.title} 
-          className="w-16 h-16 object-cover rounded-lg" 
-          onError={(e) => { e.target.onerror = null; e.target.src = 'path/to/fallback-image.jpg'; }}
-        />
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800">{product.title}</h3>
-          <p className="text-gray-600 text-sm">₹{product.price}</p>
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div className="flex gap-4">
+          <img 
+            src={imageUrl} 
+            alt={title} 
+            className="w-20 h-20 object-cover rounded-lg" 
+            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400'; }}
+          />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+            <p className="text-gray-500 text-sm">{brand}</p>
+            <p className="text-amber-600 font-bold mt-1">₹{price}</p>
+            <p className="text-gray-600 text-sm mt-2 line-clamp-2">{description}</p>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={handleDelete}
-          className="p-2 bg-red-500 text-white rounded-full"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-        <button 
-          onClick={() => window.open(product.amazonUrl, '_blank')}
-          className="p-2 bg-amber-500 text-white rounded-full"
-        >
-          <ExternalLink className="w-5 h-5" />
-        </button>
+        
+        <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button 
+              onClick={() => handleQuantityChange(quantity - 1)}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              disabled={quantity <= 1 || isUpdating}
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="px-4 py-1 text-center min-w-[40px]">{quantity}</span>
+            <button 
+              onClick={() => handleQuantityChange(quantity + 1)}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleDelete}
+              className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              title="Remove from cart"
+              disabled={isUpdating}
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            {amazonUrl && (
+              <button 
+                onClick={() => window.open(amazonUrl, '_blank')}
+                className="p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 transition-colors"
+                title="View on Amazon"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-const deleteProduct = async (productId) => {
-  try {
-    setProducts(products.filter(product => product._id !== productId));
-    toast.success("Product removed from cart");
-  } catch (error) {
-    console.error("Error updating cart:", error);
-    toast.error("Failed to remove product from cart");
-  }
-};
-
-export const deleteThisProduct = async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const userId = req.user._id;
-
-    console.log('User ID:', userId);
-    console.log('Product ID:', productId);
-
-    const user = await UserModel.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (!user.userCart.includes(productId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Product not in cart"
-      });
-    }
-
-    user.userCart = user.userCart.filter(id => id.toString() !== productId);
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Product removed from cart",
-      cart: user.userCart
-    });
-  } catch (error) {
-    console.error('Delete from cart error:', error);
-    return res.status(500).json({
-      success: false,
-      message: "Error removing product from cart"
-    });
-  }
+CartProductCard.propTypes = {
+  product: PropTypes.object.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onUpdateQuantity: PropTypes.func.isRequired
 };

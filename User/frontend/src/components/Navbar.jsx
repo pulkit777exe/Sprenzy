@@ -14,28 +14,28 @@ export const Navbar = () => {
   useEffect(() => {
     const fetchCartItems = async () => {
       try {
-        const token = localStorage.getItem('token'); // Ensure you're using the correct token
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/cartProducts`, {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/user/cartProducts`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        const data = response.data;
         
-        // Log the entire data object to understand its structure
-        console.log("Fetched data:", data);
-        
-        // Check if data.cart is defined and is an array
-        setCartItems(Array.isArray(data?.cart) ? data.cart.length : 0);
-        console.log(Array.isArray(data?.cart) ? data.cart.length : 0);
+        if (response.data.success) {
+          setCartItems(Array.isArray(response.data.cart) ? response.data.cart.length : 0);
+        }
       } catch (error) {
         console.error("Error fetching cart items:", error);
-        // Consider setting an error state here
+        setCartItems(0);
       }
     };
 
     if (user) {
       fetchCartItems();
+    } else {
+      setCartItems(0);
     }
   }, [user]);
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, ChevronDown, Settings } from 'lucide-react';
+import { LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 const ProfileDropdown = () => {
@@ -72,7 +72,6 @@ const ProfileDropdown = () => {
             </div>
           </div>
 
-          {/* Menu Items */}
           <div className="py-1">
             <button
               onClick={() => {
@@ -94,7 +93,6 @@ const ProfileDropdown = () => {
             </button>
           </div>
 
-          {/* Footer */}
           <div className="px-4 py-3 text-xs text-gray-500 border-t border-gray-100 bg-gray-50 rounded-b-xl">
             <p>Signed in as</p>
             <p className="truncate font-medium">{user?.email}</p>

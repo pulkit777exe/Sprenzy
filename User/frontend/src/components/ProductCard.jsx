@@ -2,6 +2,9 @@ import { ShoppingCart, ExternalLink } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
+import { useState } from 'react';
 
 export const ProductCard = ({
   _id,
@@ -14,31 +17,43 @@ export const ProductCard = ({
   onAddToCart
 }) => {
   const { user } = useAuth();
+  const [isAdding, setIsAdding] = useState(false);
   const navigate = useNavigate();
 
   const handleAddToCart = async () => {
     if (!user) {
-      alert("Please log in to add items to your cart.");
+      navigate('/signin');
       return;
     }
 
     try {
+      setIsAdding(true);
       const token = localStorage.getItem('token');
+      
+      console.log(`Adding product ${_id} to cart`);
+      
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/addProduct/${_id}`,
-        {},
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/addProduct/${_id}`,
+        { quantity: 1 },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
 
-      console.log("Add to cart response:", response.data);
-      onAddToCart(_id);
+      if (response.data.success) {
+        toast.success("Product added to cart!");
+        if (onAddToCart) onAddToCart(_id);
+      } else {
+        toast.error(response.data.message || "Failed to add product to cart");
+      }
     } catch (error) {
       console.error("Error adding product to cart:", error);
-      alert("Failed to add product to cart.");
+      toast.error(error.response?.data?.message || "Failed to add product to cart");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -95,4 +110,15 @@ export const ProductCard = ({
       </div>
     </div>
   );
+};
+
+ProductCard.propTypes = {
+  _id: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  imageUrl: PropTypes.string,
+  amazonUrl: PropTypes.string,
+  brand: PropTypes.string,
+  onAddToCart: PropTypes.func.isRequired
 };

@@ -21,7 +21,7 @@ export const ProductGrid = ({ products = [], loading = false, error = null }) =>
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/addProduct/${productId}`,
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/addProduct/${productId}`,
         {},
         {
           headers: {

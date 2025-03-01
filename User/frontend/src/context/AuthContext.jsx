@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/verify`, {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/user/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -38,19 +38,54 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/v1/user/signin`, {
-        email,
-        password
-      });
-
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/signin`,
+        { email, password }
+      );
+      
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
-        console.log('Token stored:', response.data.token);
-        return response.data;
+        return { user: response.data.user };
       }
+      
+      return { error: response.data.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
+      return { error: error.response?.data?.message || 'Login failed' };
+    }
+  };
+  
+  const googleLogin = async (credential) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/google-auth`,
+        { credential }
+      );
+      
+      if (response.data.success) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.user);
+        return { user: response.data.user };
+      }
+      
+      return { error: response.data.message || 'Google login failed' };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { error: error.response?.data?.message || 'Google login failed' };
+    }
+  };
+
+  const signup = async (username, email, password) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/signup`,
+        { username, email, password }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Signup error:', error);
       throw error;
     }
   };
@@ -66,6 +101,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     token,
+    signup,
+    googleLogin
   };
 
   return (

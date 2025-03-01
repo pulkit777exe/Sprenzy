@@ -2,8 +2,9 @@ import { UserModel } from "../models/User.models.js";
 import { ProductModel } from "../models/Product.models.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from 'google-auth-library';
 
-// const JWT_SECRET = process.env.VITE_JWT_SECRET;
+const JWT_SECRET = process.env.VITE_JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1d";
 const SALT_ROUNDS = 10;
 
@@ -63,6 +64,8 @@ const createErrorResponse = (message, errors = null) => {
   return response;
 };
 
+const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_AUTH_CLIENT_ID);
+
 export const signup = async (req, res) => {
   try {
     const { username, password, email } = req.body;
@@ -107,7 +110,6 @@ export const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -115,7 +117,6 @@ export const signin = async (req, res) => {
       });
     }
 
-    // Find user by email
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(400).json({
@@ -124,7 +125,13 @@ export const signin = async (req, res) => {
       });
     }
 
-    // Check password
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please sign in with Google for this account"
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -133,17 +140,15 @@ export const signin = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = jwt.sign(
       { 
         userId: user._id,
         email: user.email
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      process.env.VITE_JWT_SECRET,
+      { expiresIn: '30d' }
     );
 
-    // Send response
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -214,18 +219,13 @@ export const cartProducts = async (req, res) => {
 
 export const addToCart = async (req, res) => {
   try {
-    const { productId } = req.params;
     const userId = req.user._id;
-
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required"
-      });
-    }
-
+    const productId = req.params.id;
+    const { quantity = 1 } = req.body;
+    
     const product = await ProductModel.findById(productId);
     if (!product) {
+      console.error(`Product with ID ${productId} not found`);
       return res.status(404).json({
         success: false,
         message: "Product not found"
@@ -234,55 +234,101 @@ export const addToCart = async (req, res) => {
 
     const user = await UserModel.findById(userId);
     if (!user) {
+      console.error(`User with ID ${userId} not found`);
       return res.status(404).json({
         success: false,
         message: "User not found"
       });
     }
 
-    // Check if the product is already in the cart
-    if (!user.userCart.includes(productId)) {
-      user.userCart.push(productId);
-      await user.save();
+    if (!user.userCart) {
+      user.userCart = [];
     }
 
-    const updatedUser = await UserModel.findById(userId).populate('userCart');
+    const existingItem = user.userCart.find(item => 
+      item.productId && item.productId.toString() === productId
+    );
+    
+    if (existingItem) {
+      existingItem.quantity += parseInt(quantity);
+    } else {
+      user.userCart.push({
+        productId,
+        quantity: parseInt(quantity)
+      });
+    }
 
+    await user.save();
+    
     return res.status(200).json({
       success: true,
-      message: "Product added to cart",
-      cart: updatedUser.userCart
+      message: "Product added to cart successfully",
+      cartItemCount: user.userCart.length
     });
   } catch (error) {
     console.error('Add to cart error:', error);
     return res.status(500).json({
       success: false,
-      message: "Error adding product to cart"
+      message: "Error adding product to cart",
+      error: error.message
     });
   }
 };
 
 export const getCartItems = async (req, res) => {
   try {
-    const user = await UserModel.findOne({email: req.user.email})
-      .populate('userCart');
-
+    const userId = req.user._id;
+    
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      console.error(`User with ID ${userId} not found`);
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+        
+    if (!user.userCart || user.userCart.length === 0) {
+      return res.status(200).json({
+        success: true,
+        cart: []
+      });
+    }
+    
+    const productIds = user.userCart.map(item => item.productId);
+    
+    const products = await ProductModel.find({
+      _id: { $in: productIds }
+    });
+        
+    const cartItems = products.map(product => {
+      const cartItem = user.userCart.find(item => 
+        item.productId && item.productId.toString() === product._id.toString()
+      );
+      
+      return {
+        ...product.toObject(),
+        quantity: cartItem ? cartItem.quantity : 1
+      };
+    });
+        
     return res.status(200).json({
       success: true,
-      cart: user.userCart
+      cart: cartItems
     });
   } catch (error) {
     console.error('Get cart items error:', error);
     return res.status(500).json({
       success: false,
-      message: "Error fetching cart items"
+      message: "Error fetching cart items",
+      error: error.message
     });
   }
 };
 
 export const verifyToken = async (req, res) => {
   try {
-    // The user will be available from the auth middleware
     const user = req.user;
     
     return res.status(200).json({
@@ -304,18 +350,29 @@ export const verifyToken = async (req, res) => {
 
 export const deleteProductFromCart = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const productId = req.params.id;
     const userId = req.user._id;
 
-    const user = await UserModel.findOne({ email: userId });
-    if (!user.userCart.includes(productId)) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    const initialCartLength = user.userCart.length;
+    user.userCart = user.userCart.filter(item => 
+      item.productId.toString() !== productId
+    );
+    
+    if (user.userCart.length === initialCartLength) {
       return res.status(400).json({
         success: false,
         message: "Product not in cart"
       });
     }
 
-    user.userCart = user.userCart.filter(id => id.toString() !== productId);
     await user.save();
 
     return res.status(200).json({
@@ -328,6 +385,363 @@ export const deleteProductFromCart = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error removing product from cart"
+    });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.VITE_GOOGLE_AUTH_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId, picture } = payload;
+    
+    let user = await UserModel.findOne({ email });
+    
+    if (!user) {
+      const username = name.replace(/\s+/g, '') + Math.floor(Math.random() * 1000);
+      user = await UserModel.create({
+        username,
+        email,
+        googleId,
+        avatar: picture || undefined
+      });
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      if (picture) user.avatar = picture;
+      await user.save();
+    }
+    
+    const token = user.generateAuthToken();
+    
+    res.status(200).json({
+      success: true,
+      message: "Google authentication successful",
+      token,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    console.error("Google auth error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Google authentication failed"
+    });
+  }
+};
+
+export const updateCartItemQuantity = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const productId = req.params.id;
+    const { quantity } = req.body;
+        
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid quantity"
+      });
+    }
+    
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    const cartItem = user.userCart.find(item => 
+      item.productId.toString() === productId
+    );
+    
+    if (!cartItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found in cart"
+      });
+    }
+    
+    cartItem.quantity = parseInt(quantity);
+    await user.save();
+        
+    return res.status(200).json({
+      success: true,
+      message: "Cart item quantity updated"
+    });
+  } catch (error) {
+    console.error('Update cart quantity error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating cart item quantity",
+      error: error.message
+    });
+  }
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    const user = await UserModel.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user profile"
+    });
+  }
+};
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { username, email, phone, fullName } = req.body;
+    
+    // Find user
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Update fields if provided
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (fullName) user.fullName = fullName;
+    
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        fullName: user.fullName
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating profile"
+    });
+  }
+};
+
+export const addUserAddress = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { 
+      fullName, 
+      streetAddress, 
+      city, 
+      state, 
+      postalCode, 
+      country = 'India', 
+      phone,
+      isDefault 
+    } = req.body;
+    
+    // Validate required fields
+    if (!fullName || !streetAddress || !city || !state || !postalCode || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "All address fields are required"
+      });
+    }
+    
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Initialize addresses array if it doesn't exist
+    if (!user.addresses) {
+      user.addresses = [];
+    }
+    
+    // If this is the first address or isDefault is true, update all other addresses
+    if (isDefault || user.addresses.length === 0) {
+      user.addresses.forEach(addr => {
+        addr.isDefault = false;
+      });
+    }
+    
+    // Add new address
+    user.addresses.push({
+      fullName,
+      streetAddress,
+      city,
+      state,
+      postalCode,
+      country,
+      phone,
+      isDefault: isDefault || user.addresses.length === 0 // First address is default
+    });
+    
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Address added successfully",
+      addresses: user.addresses
+    });
+  } catch (error) {
+    console.error('Add address error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error adding address"
+    });
+  }
+};
+
+export const updateUserAddress = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const addressId = req.params.addressId;
+    const { 
+      fullName, 
+      streetAddress, 
+      city, 
+      state, 
+      postalCode, 
+      country, 
+      phone,
+      isDefault 
+    } = req.body;
+    
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Find the address to update
+    const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+    
+    if (addressIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+    
+    // Update address fields if provided
+    if (fullName) user.addresses[addressIndex].fullName = fullName;
+    if (streetAddress) user.addresses[addressIndex].streetAddress = streetAddress;
+    if (city) user.addresses[addressIndex].city = city;
+    if (state) user.addresses[addressIndex].state = state;
+    if (postalCode) user.addresses[addressIndex].postalCode = postalCode;
+    if (country) user.addresses[addressIndex].country = country;
+    if (phone) user.addresses[addressIndex].phone = phone;
+    
+    // Handle default address
+    if (isDefault) {
+      user.addresses.forEach((addr, idx) => {
+        addr.isDefault = idx === addressIndex;
+      });
+    }
+    
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Address updated successfully",
+      addresses: user.addresses
+    });
+  } catch (error) {
+    console.error('Update address error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating address"
+    });
+  }
+};
+
+export const deleteUserAddress = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const addressId = req.params.addressId;
+    
+    const user = await UserModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Find the address to delete
+    const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+    
+    if (addressIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+    
+    // Check if it's the default address
+    const isDefault = user.addresses[addressIndex].isDefault;
+    
+    // Remove the address
+    user.addresses.splice(addressIndex, 1);
+    
+    // If it was the default address and there are other addresses, set a new default
+    if (isDefault && user.addresses.length > 0) {
+      user.addresses[0].isDefault = true;
+    }
+    
+    await user.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Address deleted successfully",
+      addresses: user.addresses
+    });
+  } catch (error) {
+    console.error('Delete address error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error deleting address"
     });
   }
 };
