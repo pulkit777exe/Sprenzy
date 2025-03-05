@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { userRouter } from './routes/User.routes.js';
-import { productRouter } from './routes/Product.routes.js';
+import productRouter from './routes/Product.routes.js';
 import { paymentRouter } from './routes/Payment.routes.js';
 
 dotenv.config();
@@ -11,17 +11,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// For Stripe webhook - must be before other middleware
 app.post('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
-// CORS middleware
 app.use(cors({
   origin: "https://royal-choice.netlify.app",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
 
-// Regular middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,12 +26,10 @@ app.get('/', (req, res) => {
   res.send('Server is running!');
 });
 
-// Routes
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/product', productRouter);
 app.use('/api/v1/payment', paymentRouter);
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
   res.status(500).json({
@@ -44,7 +39,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_CONNECTION_URL)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -80,14 +74,12 @@ mongoose.connect(process.env.MONGODB_CONNECTION_URL)
     
     migrateCartItems();
     
-    // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} - http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);
-    // Don't crash the server if MongoDB connection fails
     console.log('Starting server without MongoDB connection...');
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} (without DB) - http://localhost:${PORT}`);

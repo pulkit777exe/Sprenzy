@@ -12,11 +12,23 @@ export default function ProductsPage() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
+                setLoading(true);
+                const token = localStorage.getItem('token');
                 const response = await axios.get(
-                    `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`
+                    `${import.meta.env.VITE_BACKEND_API_URL}/product/all-products`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
                 );
-                console.log("Products fetched:", response.data);
-                setProducts(response.data);
+                
+                if (response.data.success) {
+                    setProducts(response.data.products);
+                } else {
+                    setError("Failed to load products");
+                    toast.error("Failed to load products");
+                }
             } catch (error) {
                 console.error("Error fetching products:", error);
                 setError("Failed to load products");

@@ -1,5 +1,5 @@
 import { ShoppingCart, ExternalLink } from 'lucide-react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import PropTypes from 'prop-types';

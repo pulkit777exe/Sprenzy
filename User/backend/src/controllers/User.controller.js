@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
 
-const JWT_SECRET = process.env.VITE_JWT_SECRET;
+const JWT_SECRET = "pulkit";
 const SALT_ROUNDS = 10;
 
 const MESSAGES = {
@@ -124,13 +124,6 @@ export const signin = async (req, res) => {
       });
     }
 
-    if (!user.password) {
-      return res.status(400).json({
-        success: false,
-        message: "Please sign in with Google for this account"
-      });
-    }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -141,11 +134,12 @@ export const signin = async (req, res) => {
 
     const token = jwt.sign(
       { 
-        userId: user._id,
-        email: user.email
+        _id: user._id,
+        email: user.email,
+        isAdmin: user.isAdmin || false
       },
-      JWT_SECRET,
-      { expiresIn: '24h' }
+      process.env.VITE_JWT_SECRET,
+      { expiresIn: '30d' }
     );
 
     res.status(200).json({
@@ -155,7 +149,8 @@ export const signin = async (req, res) => {
       user: {
         _id: user._id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        isAdmin: user.isAdmin || false
       }
     });
   } catch (error) {
@@ -328,21 +323,30 @@ export const getCartItems = async (req, res) => {
 
 export const verifyToken = async (req, res) => {
   try {
-    const user = req.user;
+    const userId = req.user._id;
+    
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
     
     return res.status(200).json({
       success: true,
       user: {
         _id: user._id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        isAdmin: user.isAdmin || false
       }
     });
   } catch (error) {
     console.error('Token verification error:', error);
-    return res.status(401).json({
+    return res.status(500).json({
       success: false,
-      message: 'Invalid token'
+      message: "Error verifying token"
     });
   }
 };

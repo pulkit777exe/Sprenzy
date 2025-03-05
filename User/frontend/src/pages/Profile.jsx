@@ -221,7 +221,7 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-32">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">My Profile</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -512,7 +512,7 @@ export default function Profile() {
                   {addresses.length === 0 ? (
                     <div className="text-center py-8">
                       <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">You haven't added any addresses yet</p>
+                      <p className="text-gray-500">You have not added any addresses yet</p>
                       <button 
                         onClick={() => {
                           setIsAddingAddress(true);

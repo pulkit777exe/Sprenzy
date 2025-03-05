@@ -21,8 +21,9 @@ export const verifyJWT = (req, res, next) => {
             }
             
             req.user = {
-                _id: decoded.userId || decoded._id,
-                email: decoded.email
+                _id: decoded._id,
+                email: decoded.email,
+                isAdmin: decoded.isAdmin || false
             };
             
             next();
@@ -34,4 +35,22 @@ export const verifyJWT = (req, res, next) => {
             message: "Authentication failed"
         });
     }
+}; 
+
+export const isAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: "Authentication required"
+        });
+    }
+
+    if (!req.user.isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: "Access denied. Admin privileges required."
+        });
+    }
+
+    next();
 }; 

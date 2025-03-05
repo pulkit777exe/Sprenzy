@@ -15,7 +15,8 @@ export const createProduct = async (req, res) => {
     !amazonUrl
   ) {
     return res.status(400).json({
-      error: "Provide all required arguments",
+      success: false,
+      message: "Provide all required fields",
     });
   }
 
@@ -33,36 +34,50 @@ export const createProduct = async (req, res) => {
     await product.save();
 
     return res.status(201).json({
-      success: "Product added successfully",
+      success: true,
+      message: "Product added successfully",
+      product
     });
   } catch (error) {
     console.error(error);
     return res
       .status(500)
-      .json({ error: "An error occurred while adding the product" });
+      .json({ 
+        success: false,
+        message: "An error occurred while adding the product" 
+      });
   }
 };
 
 export const deleteProducts = async (req, res) => {
-  const { id } = req.params;
-
   try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
+    }
+
+    const { id } = req.params;
     const product = await ProductModel.findByIdAndDelete(id);
 
     if (!product) {
       return res.status(404).json({
-        error: "Product not found",
+        success: false,
+        message: "Product not found"
       });
     }
 
     return res.status(200).json({
-      success: "Product deleted successfully",
+      success: true,
+      message: "Product deleted successfully"
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while deleting the product" });
+    console.error('Delete product error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the product"
+    });
   }
 };
 
@@ -144,6 +159,22 @@ export const fetchFeaturedProducts = async (req, res) => {
   }
 };
 
+export const fetchAllProducts = async (req, res) => {
+  try {
+    const products = await ProductModel.find({});
+    
+    return res.status(200).json({
+      success: true,
+      products
+    });
+  } catch (error) {
+    console.error('Error fetching all products:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching products"
+    });
+  }
+};
 
 export const viewUserProducts = async (req, res) => {
   const email = req.body.email;

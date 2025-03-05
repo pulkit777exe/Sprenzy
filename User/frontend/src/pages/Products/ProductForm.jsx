@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
-import axios from 'axios';
 
 const initialFormData = {
   title: '',
@@ -23,26 +22,16 @@ const categories = [
   'Other',
 ];
 
-export default function ProductForm({ onSubmit }) {
-  const [formData, setFormData] = useState(initialFormData);
+export default function ProductForm({ onSubmit, initialValues = {} }) {
+  const [formData, setFormData] = useState(initialValues.id ? initialValues : initialFormData);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:3000/api/v1/admin/create-products', formData, {
-        headers: {
-          'Content-Type': 'application/json',
-        }}
-      );
-      if (response.status === 200) {
-        const data = response.data;
-        onSubmit(data);
-        setFormData(initialFormData);
-      } else {
-        console.error('Server responded with an error:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.error('There was a problem with the fetch operation:', error);
+    // Pass the form data to the parent's handler
+    onSubmit(formData);
+    // Clear the form if it's not for editing
+    if (!initialValues.id) {
+      setFormData(initialFormData);
     }
   };
 

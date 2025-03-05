@@ -12,6 +12,7 @@ import Profile from "./pages/Profile"
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import CreateProducts from "./pages/CreateProducts"
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />
+            <Route path="/admin/products" element={<CreateProducts />} />
           </Routes>
         </Router>      
       </AuthProvider>

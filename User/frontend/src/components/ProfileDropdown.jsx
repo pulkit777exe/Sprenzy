@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, ChevronDown, Settings } from 'lucide-react';
+import { LogOut, ChevronDown, Settings, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 const ProfileDropdown = () => {
@@ -53,7 +53,6 @@ const ProfileDropdown = () => {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          {/* User Info Section */}
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -68,6 +67,11 @@ const ProfileDropdown = () => {
                 <p className="text-xs text-gray-500 truncate">
                   {user?.email}
                 </p>
+                {user?.isAdmin && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 mt-1">
+                    Admin
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -83,6 +87,19 @@ const ProfileDropdown = () => {
               <Settings className="w-4 h-4 mr-3 text-gray-400" />
               <span>Account Settings</span>
             </button>
+
+            {user?.isAdmin && (
+              <button
+                onClick={() => {
+                  navigate('/admin/products');
+                  setIsOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <LayoutDashboard className="w-4 h-4 mr-3 text-gray-400" />
+                <span>Admin Panel</span>
+              </button>
+            )}
 
             <button
               onClick={handleLogout}

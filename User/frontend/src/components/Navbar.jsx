@@ -109,13 +109,13 @@ export const Navbar = () => {
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-gray-100">
+          <div className="md:hidden mt-4 pb-4 border-t transition ease duration-500 border-gray-100">
             <div className="flex flex-col space-y-4 pt-4">
               {navItems.map((item) => (
                 <Link
                   key={item}
                   to={`/${item.toLowerCase()}`}
-                  className="text-gray-600 hover:text-primary transition-colors px-4"
+                  className="text-gray-600 hover:text-primary hover:bg-gray-100 p-2 rounded transition-colors px-4"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item}
@@ -125,7 +125,7 @@ export const Navbar = () => {
                 <div className="flex flex-col space-y-2 px-4 pt-2 border-t border-gray-100">
                   <Link
                     to="/signin"
-                    className="text-gray-600 hover:text-primary transition-colors"
+                    className="px-4 py-2 text-gray-600 hover:text-primary hover:bg-gray-100  border-primary border  transition-colors text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Sign in

@@ -47,7 +47,7 @@ UserSchema.methods.isPasswordCorrect = async function(password) {
 
 UserSchema.methods.generateAuthToken = function() {
   return jwt.sign(
-    { _id: this._id, email: this.email },
+    { _id: this._id, email: this.email, isAdmin: this.isAdmin },
     process.env.VITE_JWT_SECRET,
     { expiresIn: '30d' }
   );
