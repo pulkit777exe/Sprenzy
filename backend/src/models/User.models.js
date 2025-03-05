@@ -2,7 +2,6 @@ import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Define address schema
 const addressSchema = new Schema({
   fullName: { type: String, required: true },
   streetAddress: { type: String, required: true },
@@ -14,7 +13,6 @@ const addressSchema = new Schema({
   isDefault: { type: Boolean, default: false }
 });
 
-// Define cart item schema to include quantity
 const cartItemSchema = new Schema({
   productId: { 
     type: Schema.Types.ObjectId, 

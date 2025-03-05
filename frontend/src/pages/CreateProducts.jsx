@@ -59,11 +59,20 @@ export default function CreateProducts() {
 
   const handleCreateProduct = async (productData) => {
     try {
+      // Validate stock
+      if (productData.stock === undefined || productData.stock < 0) {
+        toast.error('Please enter a valid stock quantity');
+        return;
+      }
+
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_API_URL}/product/create-products`,
-        productData,
+        {
+          ...productData,
+          stock: parseInt(productData.stock) // Ensure stock is a number
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -86,12 +95,21 @@ export default function CreateProducts() {
 
   const handleUpdateProduct = async (index, productData) => {
     try {
+      // Validate stock
+      if (productData.stock === undefined || productData.stock < 0) {
+        toast.error('Please enter a valid stock quantity');
+        return;
+      }
+
       const token = localStorage.getItem('token');
       const productId = products[index]._id;
       
       const response = await axios.put(
         `${import.meta.env.VITE_BACKEND_API_URL}/product/update-product/${productId}`,
-        productData,
+        {
+          ...productData,
+          stock: parseInt(productData.stock) // Ensure stock is a number
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,

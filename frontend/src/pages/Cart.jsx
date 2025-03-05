@@ -199,7 +199,7 @@ export default function Cart() {
                   <div className="mt-4 flex items-center gap-2">
                     <span>Payment methods accepted:</span>
                     <div className="flex gap-2">
-                      <span className="text-blue-600">Visa</span>
+                      <span className="text-blue-600">UPI</span>
                       <span className="text-red-600">Mastercard</span>
                       <span className="text-indigo-600">PayPal</span>
                     </div>

@@ -215,7 +215,7 @@ export const addToCart = async (req, res) => {
   try {
     const userId = req.user._id;
     const productId = req.params.id;
-    const { quantity = 1 } = req.body;
+    const { quantity = 0 } = req.body;
     
     const product = await ProductModel.findById(productId);
     if (!product) {
