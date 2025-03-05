@@ -84,7 +84,6 @@ export default function Cart() {
       const updatedProducts = products.filter(product => product._id !== productId);
       setProducts(updatedProducts);
       
-      // Recalculate cart totals
       const newSubtotal = updatedProducts.reduce((total, product) => 
         total + (parseFloat(product.price || 0) * (product.quantity || 1)), 0);
       

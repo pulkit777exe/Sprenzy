@@ -7,7 +7,7 @@ import {
   viewAllProducts, 
   viewUserProducts,
   fetchAllProducts 
-} from "../Controller/Product.controller.js";
+} from "../controllers/Product.controller.js";
 import { verifyJWT, isAdmin } from "../middleware/auth.middleware.js";
 
 const productRouter = Router();

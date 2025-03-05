@@ -13,7 +13,7 @@ import {
     addUserAddress,
     updateUserAddress,
     deleteUserAddress
-} from "../Controller/User.controller.js";
+} from "../controllers/User.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const userRouter = Router();

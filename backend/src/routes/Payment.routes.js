@@ -3,7 +3,7 @@ import {
   createCheckoutSession, 
   checkoutSuccess, 
   stripeWebhook 
-} from '../Controller/Payment.controller.js';
+} from '../controllers/Payment.controller.js';
 import { verifyJWT } from '../middleware/auth.middleware.js';
 import express from 'express';
 

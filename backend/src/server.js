@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 app.post('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
 app.use(cors({
-  origin: "https://royal-choice.netlify.app",
+  origin: "http://localhost:5173",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
