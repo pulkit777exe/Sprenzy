@@ -9,13 +9,10 @@ import express from 'express';
 
 const paymentRouter = Router();
 
-// Route to create a checkout session
 paymentRouter.post('/create-checkout-session', verifyJWT, createCheckoutSession);
 
-// Route for successful checkout (to clear cart)
 paymentRouter.post('/checkout-success', verifyJWT, checkoutSuccess);
 
-// Webhook route for Stripe events
 paymentRouter.post('/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
 export { paymentRouter }; 

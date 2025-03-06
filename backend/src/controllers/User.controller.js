@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
 
-const JWT_SECRET = "pulkit";
+const JWT_SECRET = process.env.VITE_JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 const MESSAGES = {
@@ -138,7 +138,7 @@ export const signin = async (req, res) => {
         email: user.email,
         isAdmin: user.isAdmin || false
       },
-      process.env.VITE_JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '30d' }
     );
 
@@ -215,7 +215,7 @@ export const addToCart = async (req, res) => {
   try {
     const userId = req.user._id;
     const productId = req.params.id;
-    const { quantity = 1 } = req.body;
+    const { quantity = 0 } = req.body;
     
     const product = await ProductModel.findById(productId);
     if (!product) {
