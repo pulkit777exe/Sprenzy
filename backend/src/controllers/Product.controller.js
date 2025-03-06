@@ -134,15 +134,6 @@ export const updateProducts = async (req, res) => {
   }
 };
 
-export const viewAllProducts = async (req, res) => {
-  try {
-    const products = await ProductModel.find();
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching products" });
-  }
-};
-
 export const fetchFeaturedProducts = async (req, res) => {
   try {
     const products = await ProductModel.find().limit(12);
