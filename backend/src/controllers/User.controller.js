@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
 
-const JWT_SECRET = "pulkit";
+const JWT_SECRET = process.env.VITE_JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 const MESSAGES = {
@@ -138,7 +138,7 @@ export const signin = async (req, res) => {
         email: user.email,
         isAdmin: user.isAdmin || false
       },
-      process.env.VITE_JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '30d' }
     );
 
