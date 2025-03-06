@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Save, X } from 'lucide-react';
 
 const initialFormData = {
@@ -9,6 +10,7 @@ const initialFormData = {
   category: '',
   imageUrl: '',
   amazonUrl: '',
+  stock: 0
 };
 
 const categories = [
@@ -23,7 +25,16 @@ const categories = [
 ];
 
 export default function ProductForm({ onSubmit, initialValues = {} }) {
-  const [formData, setFormData] = useState(initialValues.id ? initialValues : initialFormData);
+  const [formData, setFormData] = useState({
+    title: initialValues.title || '',
+    description: initialValues.description || '',
+    brand: initialValues.brand || '',
+    price: initialValues.price || 0,
+    category: initialValues.category || '',
+    imageUrl: initialValues.imageUrl || '',
+    amazonUrl: initialValues.amazonUrl || '',
+    stock: initialValues.stock || 0
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -158,6 +169,22 @@ export default function ProductForm({ onSubmit, initialValues = {} }) {
             className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           />
         </div>
+
+        <div>
+          <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
+            Stock Quantity
+          </label>
+          <input
+            type="number"
+            id="stock"
+            name="stock"
+            value={formData.stock}
+            onChange={handleChange}
+            min="0"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+            required
+          />
+        </div>
       </div>
 
       <div className="flex justify-end space-x-3">
@@ -180,3 +207,8 @@ export default function ProductForm({ onSubmit, initialValues = {} }) {
     </form>
   );
 }
+
+ProductForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  initialValues: PropTypes.object
+};
