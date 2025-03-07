@@ -17,42 +17,43 @@ export const CheckoutButton = () => {
         return;
       }
       
-      try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_API_URL}/payment/create-checkout-session`,
-          {
-            successUrl: `${window.location.origin}/checkout-success`,
-            cancelUrl: `${window.location.origin}/cart`,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API_URL}/payment/create-checkout-session`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
-        
-        if (response.data.success) {
-          // Redirect to Stripe checkout
-          window.location.href = response.data.url;
-        } else {
-          toast.error('Failed to create checkout session');
         }
-      } catch (error) {
-        console.error('Checkout error:', error);
-        
-        // For development - if Stripe is not configured, offer a mock payment option
-        if (error.response?.status === 503 || error.message.includes('Network Error')) {
-          const mockPayment = window.confirm(
-            'Payment system is unavailable. Would you like to simulate a successful payment for testing?'
-          );
-          
-          if (mockPayment) {
-            navigate('/checkout-success');
-          }
-        } else {
-          toast.error(error.response?.data?.message || 'Failed to process checkout');
-        }
+      );
+      
+      if (response.data.success) {
+        // Create a form to submit to Paytm
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = response.data.txnUrl;
+
+        // Add all Paytm parameters as hidden fields
+        Object.entries(response.data.params).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+      } else {
+        toast.error(response.data.message || 'Failed to create checkout session');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      if (error.response?.status === 503) {
+        toast.error('Payment system is currently unavailable. Please try again later.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to process checkout');
       }
     } finally {
       setIsProcessing(false);
@@ -60,12 +61,19 @@ export const CheckoutButton = () => {
   };
 
   return (
-    <button 
+    <button
       onClick={handleCheckout}
       disabled={isProcessing}
-      className="w-full py-3 bg-primary text-white rounded-lg hover:bg-amber-600 transition-colors font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+      className="w-full py-3 bg-primary text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
+      {isProcessing ? (
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+          Processing...
+        </div>
+      ) : (
+        'Proceed to Checkout'
+      )}
     </button>
   );
 }; 

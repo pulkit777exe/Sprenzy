@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { userRouter } from './routes/User.routes.js';
 import productRouter from './routes/Product.routes.js';
 import { paymentRouter } from './routes/Payment.routes.js';
+import { adminRouter } from './routes/Admin.routes.js';
+dotenv.config();
 
 dotenv.config();
 
@@ -17,6 +19,7 @@ app.use(cors({
   origin: "https://sprenzy.netlify.app",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -29,6 +32,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/product', productRouter);
 app.use('/api/v1/payment', paymentRouter);
+app.use('/api/v1/admin', adminRouter);
 
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);

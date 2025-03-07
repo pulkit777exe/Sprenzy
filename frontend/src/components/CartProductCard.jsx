@@ -21,8 +21,13 @@ export const CartProductCard = ({
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      const productId = product.productId || product._id;
+      
+      console.log('Attempting to delete product from cart:', productId);
+      
       await axios.delete(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${product._id}`,
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${productId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -30,11 +35,13 @@ export const CartProductCard = ({
           }
         }
       );
-      onDelete(product._id);
+      
+      onDelete(productId);
       toast.success('Product removed from cart');
     } catch (error) {
       console.error('Error deleting product:', error);
-      toast.error('Failed to remove product from cart');
+      console.error('Error response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Failed to remove product from cart');
     }
   };
 
@@ -46,8 +53,10 @@ export const CartProductCard = ({
     
     try {
       const token = localStorage.getItem('token');
+      const productId = product.productId || product._id;
+      
       await axios.put(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${product._id}/quantity`,
+        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${productId}/quantity`,
         { quantity: newQuantity },
         {
           headers: {
@@ -57,7 +66,7 @@ export const CartProductCard = ({
         }
       );
       
-      onUpdateQuantity(product._id, newQuantity);
+      onUpdateQuantity(productId, newQuantity);
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast.error('Failed to update quantity');
@@ -68,13 +77,13 @@ export const CartProductCard = ({
   };
 
   const {
-    title = 'Product',
-    price = '0',
-    imageUrl = 'https://placehold.co/600x400',
-    amazonUrl = '#',
-    brand = 'Unknown',
-    description = 'No description available'
-  } = product || {};
+    title = product.title || '',
+    price = product.price || '0',
+    imageUrl = product.imageUrl || 'https://placehold.co/600x400',
+    amazonUrl = product.amazonUrl || '#',
+    brand = product.brand || 'Unknown',
+    description = product.description || 'No description available'
+  } = product.productDetails || product || {};
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">

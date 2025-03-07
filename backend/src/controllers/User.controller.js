@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
 
-const JWT_SECRET = process.env.VITE_JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "thankyou for telling";
 const SALT_ROUNDS = 10;
 
 const MESSAGES = {
@@ -154,10 +154,10 @@ export const signin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Signin error:', error);
     res.status(500).json({
       success: false,
-      message: "An error occurred during login"
+      message: "An error occurred during sign-in"
     });
   }
 };
@@ -269,54 +269,59 @@ export const addToCart = async (req, res) => {
   }
 };
 
-export const getCartItems = async (req, res) => {
+export const getCartProducts = async (req, res) => {
   try {
     const userId = req.user._id;
     
     const user = await UserModel.findById(userId);
-    
     if (!user) {
-      console.error(`User with ID ${userId} not found`);
       return res.status(404).json({
         success: false,
         message: "User not found"
       });
     }
+    
+    // If userCart is an array of product IDs, populate them
+    if (user.userCart && user.userCart.length > 0) {
+      // Check if userCart contains objects with productId or just product IDs
+      const isObjectArray = typeof user.userCart[0] === 'object' && user.userCart[0] !== null;
+      
+      let populatedCart;
+      if (isObjectArray) {
+        // If userCart contains objects with productId
+        const productIds = user.userCart.map(item => item.productId);
+        const products = await ProductModel.find({ _id: { $in: productIds } });
         
-    if (!user.userCart || user.userCart.length === 0) {
+        // Map products to include quantity
+        populatedCart = user.userCart.map(cartItem => {
+          const productDetails = products.find(p => p._id.toString() === cartItem.productId.toString());
+          return {
+            ...cartItem.toObject(),
+            productDetails: productDetails ? productDetails.toObject() : null
+          };
+        });
+      } else {
+        // If userCart is just an array of product IDs
+        populatedCart = await ProductModel.find({ _id: { $in: user.userCart } });
+      }
+      
       return res.status(200).json({
         success: true,
-        cart: []
+        message: "Cart products retrieved successfully",
+        products: populatedCart
       });
     }
     
-    const productIds = user.userCart.map(item => item.productId);
-    
-    const products = await ProductModel.find({
-      _id: { $in: productIds }
-    });
-        
-    const cartItems = products.map(product => {
-      const cartItem = user.userCart.find(item => 
-        item.productId && item.productId.toString() === product._id.toString()
-      );
-      
-      return {
-        ...product.toObject(),
-        quantity: cartItem ? cartItem.quantity : 1
-      };
-    });
-        
     return res.status(200).json({
       success: true,
-      cart: cartItems
+      message: "Cart is empty",
+      products: []
     });
   } catch (error) {
-    console.error('Get cart items error:', error);
+    console.error('Get cart products error:', error);
     return res.status(500).json({
       success: false,
-      message: "Error fetching cart items",
-      error: error.message
+      message: "Error fetching cart products"
     });
   }
 };

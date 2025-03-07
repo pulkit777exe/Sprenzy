@@ -67,12 +67,24 @@ export default function CreateProducts() {
 
       const token = localStorage.getItem('token');
       
+      // Log the data being sent
+      console.log('Sending product data:', productData);
+      
+      // Transform the data to match backend expectations
+      const transformedData = {
+        name: productData.title,  // Map title to name
+        description: productData.description,
+        brand: productData.brand,
+        price: parseFloat(productData.price),
+        category: productData.category,
+        imageUrl: productData.imageUrl,
+        amazonUrl: productData.amazonUrl,
+        stock: parseInt(productData.stock)
+      };
+      
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_API_URL}/product/create-products`,
-        {
-          ...productData,
-          stock: parseInt(productData.stock) // Ensure stock is a number
-        },
+        transformedData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,10 +97,11 @@ export default function CreateProducts() {
         toast.success('Product created successfully');
         fetchProducts();
       } else {
-        toast.error('Failed to create product');
+        toast.error(response.data.message || 'Failed to create product');
       }
     } catch (error) {
       console.error('Error creating product:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.message || 'Failed to create product');
     }
   };
@@ -135,6 +148,9 @@ export default function CreateProducts() {
       const token = localStorage.getItem('token');
       const productId = products[index]._id;
       
+      console.log('Deleting product with ID:', productId);
+      console.log('Using token:', token);
+      
       // Confirm before deleting
       if (!window.confirm('Are you sure you want to delete this product?')) {
         return;
@@ -149,6 +165,8 @@ export default function CreateProducts() {
         }
       );
       
+      console.log('Delete response:', response.data);
+      
       if (response.data.success) {
         toast.success(response.data.message);
         await fetchProducts(); // Refresh the products list
@@ -157,6 +175,8 @@ export default function CreateProducts() {
       }
     } catch (error) {
       console.error('Error deleting product:', error);
+      console.error('Error details:', error.response?.data);
+      
       if (error.response?.status === 403) {
         toast.error('You do not have permission to delete products');
         navigate('/');

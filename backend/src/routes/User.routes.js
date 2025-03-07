@@ -6,7 +6,7 @@ import {
     googleAuth,
     addToCart, 
     deleteProductFromCart, 
-    getCartItems,
+    getCartProducts,
     updateCartItemQuantity,
     getUserProfile,
     updateUserProfile,
@@ -25,7 +25,7 @@ userRouter.get("/verify", verifyJWT, verifyToken);
 
 userRouter.post("/addProduct/:id", verifyJWT, addToCart);
 userRouter.delete("/cart/:id", verifyJWT, deleteProductFromCart);
-userRouter.get("/cartProducts", verifyJWT, getCartItems);
+userRouter.get("/cartProducts", verifyJWT, getCartProducts);
 userRouter.put("/cart/:id/quantity", verifyJWT, updateCartItemQuantity);
 
 userRouter.get("/profile", verifyJWT, getUserProfile);

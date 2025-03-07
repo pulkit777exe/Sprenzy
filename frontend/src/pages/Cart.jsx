@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { CartProductCard } from '../components/CartProductCard';
@@ -6,7 +6,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
-import { CheckoutButton } from '../components/CheckoutButton';
+import { ShoppingBag } from 'lucide-react';
 
 export default function Cart() {
   const [products, setProducts] = useState([]);
@@ -17,6 +17,8 @@ export default function Cart() {
   const [subtotal, setSubtotal] = useState(0);
   const [shipping, setShipping] = useState(0);
   const [tax, setTax] = useState(0);
+
+  const isDeleting = useRef(false);
 
   useEffect(() => {
     if (!user) {
@@ -39,27 +41,26 @@ export default function Cart() {
             }
           }
         );
-
+        
         console.log("Cart response:", response.data);
-
+        
         if (response.data.success) {
-          setProducts(response.data.cart || []);
+          // Make sure we're getting the full product data, not just IDs
+          const cartItems = response.data.products || [];
           
-          // Calculate subtotal
-          const newSubtotal = (response.data.cart || []).reduce((total, product) => 
-            total + (parseFloat(product.price || 0) * (product.quantity || 1)), 0);
+          // Log the cart items to see their structure
+          console.log("Cart items:", cartItems);
           
-          setSubtotal(newSubtotal);
-          setShipping(newSubtotal > 1000 ? 0 : 100);
-          setTax(newSubtotal * 0.18);
+          setProducts(cartItems);
           
-          console.log("Cart products set:", response.data.cart);
+          // Calculate totals
+          calculateTotals(cartItems);
         } else {
-          toast.error('Failed to load cart items');
+          toast.error(response.data.message || 'Failed to fetch cart products');
         }
       } catch (error) {
-        console.error('Error fetching cart products:', error);
-        toast.error('Failed to load cart items');
+        console.error('Error fetching cart items:', error);
+        toast.error('Error fetching cart items');
       } finally {
         setLoading(false);
       }
@@ -68,8 +69,12 @@ export default function Cart() {
     fetchCartProducts();
   }, [user, navigate]);
 
-  const deleteProduct = async (productId) => {
+  const handleDeleteProduct = async (productId) => {
     try {
+      // Prevent duplicate toasts by checking if already deleting
+      if (isDeleting.current) return;
+      isDeleting.current = true;
+      
       const token = localStorage.getItem('token');
       
       await axios.delete(
@@ -95,6 +100,8 @@ export default function Cart() {
     } catch (error) {
       console.error('Error deleting product:', error);
       toast.error('Failed to remove product from cart');
+    } finally {
+      isDeleting.current = false;
     }
   };
 
@@ -125,6 +132,49 @@ export default function Cart() {
 
   const calculateTotal = () => {
     return (subtotal + shipping + tax).toFixed(2);
+  };
+
+  const handlePayment = async () => {
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/payment/paytm`, { items: products });
+      // Handle Paytm payment response here
+      window.location.href = response.data.paymentUrl; // Redirect to Paytm payment page
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      toast.error('Payment initiation failed.');
+    }
+  };
+
+  const calculateTotals = (cartItems) => {
+    // Calculate subtotal based on product structure
+    const newSubtotal = cartItems.reduce((total, product) => {
+      // Get price from either nested productDetails or directly from product
+      const price = product.productDetails?.price || product.price || 0;
+      const qty = product.quantity || 1;
+      return total + (parseFloat(price) * qty);
+    }, 0);
+    
+    console.log('Calculated subtotal:', newSubtotal);
+    
+    setSubtotal(newSubtotal);
+    setShipping(newSubtotal > 500 ? 0 : 100); // Free shipping over ₹500
+    setTax(newSubtotal * 0.18); // 18% tax
+  };
+
+  const CheckoutButton = () => {
+    const handleCheckout = () => {
+      navigate('/checkout', { state: { products } });
+    };
+    
+    return (
+      <button
+        onClick={handleCheckout}
+        className="w-full py-3 bg-primary text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center"
+      >
+        <ShoppingBag className="w-5 h-5 mr-2" />
+        Proceed to Checkout
+      </button>
+    );
   };
 
   return (
@@ -160,7 +210,7 @@ export default function Cart() {
                   <CartProductCard
                     key={product._id}
                     product={product}
-                    onDelete={deleteProduct}
+                    onDelete={handleDeleteProduct}
                     onUpdateQuantity={handleUpdateQuantity}
                   />
                 ))}
@@ -194,14 +244,14 @@ export default function Cart() {
                 <CheckoutButton />
                 
                 <div className="mt-6 text-sm text-gray-500">
-                  <p className="mb-2">Free shipping on orders over ₹1,000</p>
-                  <p>Estimated delivery: 3-5 business days</p>
+                  <p className="mb-2">Free shipping on orders over ₹500</p>
+                  <p>Estimated delivery: 5-7 business days</p>
                   <div className="mt-4 flex items-center gap-2">
                     <span>Payment methods accepted:</span>
                     <div className="flex gap-2">
                       <span className="text-blue-600">UPI</span>
                       <span className="text-red-600">Mastercard</span>
-                      <span className="text-indigo-600">PayPal</span>
+                      <span className="text-indigo-600">Cash On Delivery</span>
                     </div>
                   </div>
                 </div>

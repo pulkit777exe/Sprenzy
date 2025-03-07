@@ -2,71 +2,93 @@ import { ProductModel } from "../models/Product.models.js";
 import { UserModel } from "../models/User.models.js";
 
 export const createProduct = async (req, res) => {
-  const { title, description, brand, price, category, imageUrl, amazonUrl } =
-    req.body;
-
-  if (
-    !title ||
-    !description ||
-    !brand ||
-    !price ||
-    !category ||
-    !imageUrl ||
-    !amazonUrl
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: "Provide all required fields",
-    });
-  }
-
   try {
-    const product = new ProductModel({
-      title,
+    console.log('Received product data:', req.body);
+    const { name, title, description, brand, price, imageUrl, category, amazonUrl, stock } = req.body;
+    
+    // Use either name or title (whichever is provided)
+    const productTitle = title || name;
+    
+    // Validate required fields
+    if (!productTitle || !description || !price || !imageUrl || !category) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: title/name, description, price, imageUrl, and category are required"
+      });
+    }
+    
+    // Validate price and stock
+    if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a positive number"
+      });
+    }
+    
+    if (isNaN(parseInt(stock)) || parseInt(stock) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be a non-negative integer"
+      });
+    }
+    
+    // Create the product
+    const newProduct = new ProductModel({
+      title: productTitle, // Use the title field as in your schema
       description,
       brand,
-      price,
-      category,
+      price: parseFloat(price),
       imageUrl,
+      category,
       amazonUrl,
+      stock: parseInt(stock)
     });
-
-    await product.save();
-
+    
+    await newProduct.save();
+    
     return res.status(201).json({
       success: true,
-      message: "Product added successfully",
-      product
+      message: "Product created successfully",
+      product: newProduct
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ 
-        success: false,
-        message: "An error occurred while adding the product" 
-      });
+    console.error('Create product error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error creating product",
+      error: error.message
+    });
   }
 };
 
-export const deleteProducts = async (req, res) => {
+export const deleteProduct = async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({
+    const { productId } = req.params;
+    
+    if (!productId) {
+      return res.status(400).json({
         success: false,
-        message: "Access denied. Admin privileges required."
+        message: "Product ID is required"
       });
     }
 
-    const { id } = req.params;
-    const product = await ProductModel.findByIdAndDelete(id);
-
+    // Check if product exists
+    const product = await ProductModel.findById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
+
+    // Delete the product
+    await ProductModel.findByIdAndDelete(productId);
+    
+    // Also remove this product from all user carts
+    await UserModel.updateMany(
+      { "userCart.productId": productId },
+      { $pull: { userCart: { productId: productId } } }
+    );
 
     return res.status(200).json({
       success: true,
@@ -76,7 +98,8 @@ export const deleteProducts = async (req, res) => {
     console.error('Delete product error:', error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while deleting the product"
+      message: "Error deleting product",
+      error: error.message
     });
   }
 };
@@ -131,6 +154,23 @@ export const updateProducts = async (req, res) => {
     return res
       .status(500)
       .json({ error: "An error occurred while updating the product" });
+  }
+};
+
+export const viewAllProducts = async (req, res) => {
+  try {
+    const products = await ProductModel.find({});
+    
+    return res.status(200).json({
+      success: true,
+      products
+    });
+  } catch (error) {
+    console.error('Error fetching all products:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching products"
+    });
   }
 };
 

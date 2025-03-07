@@ -40,7 +40,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_API_URL}/user/signin`,
-        { email, password }
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 5000 // 5 second timeout
+        }
       );
       
       if (response.data.success) {
@@ -52,7 +58,14 @@ export const AuthProvider = ({ children }) => {
       return { error: response.data.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
-      return { error: error.response?.data?.message || 'Login failed' };
+      if (error.code === 'ERR_NETWORK') {
+        return { 
+          error: 'Unable to connect to server. Please check if the server is running.' 
+        };
+      }
+      return { 
+        error: error.response?.data?.message || 'Login failed. Please try again.' 
+      };
     }
   };
   

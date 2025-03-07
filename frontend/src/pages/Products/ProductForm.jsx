@@ -54,6 +54,22 @@ export default function ProductForm({ onSubmit, initialValues = {} }) {
     }));
   };
 
+  const validateProduct = (product) => {
+    if (!product.title || !product.description || !product.price || !product.imageUrl || !product.category) {
+      return "Please fill in all required fields";
+    }
+    
+    if (isNaN(parseFloat(product.price)) || parseFloat(product.price) <= 0) {
+      return "Please enter a valid price";
+    }
+    
+    if (isNaN(parseInt(product.stock)) || parseInt(product.stock) < 0) {
+      return "Please enter a valid stock quantity";
+    }
+    
+    return null; // No errors
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">

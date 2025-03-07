@@ -13,6 +13,9 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import CreateProducts from "./pages/CreateProducts"
+import PaytmCheckout from './pages/PaytmCheckout';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailure from './pages/PaymentFailure';
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/admin/products" element={<CreateProducts />} />
+            <Route path="/checkout" element={<PaytmCheckout />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/failure" element={<PaymentFailure />} />
           </Routes>
         </Router>      
       </AuthProvider>

@@ -11,7 +11,7 @@ export const verifyJWT = (req, res, next) => {
             });
         }
 
-        jwt.verify(token, process.env.VITE_JWT_SECRET, (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET || "thankyou for telling", (err, decoded) => {
             if (err) {
                 console.error('JWT verification error:', err);
                 return res.status(401).json({
