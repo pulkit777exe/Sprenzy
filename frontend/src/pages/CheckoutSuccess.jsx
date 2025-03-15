@@ -22,7 +22,6 @@ export default function CheckoutSuccess() {
       try {
         const token = localStorage.getItem('token');
         
-        // Call the success endpoint to clear the cart
         await axios.post(
           `${import.meta.env.VITE_BACKEND_API_URL}/payment/checkout-success`,
           {},

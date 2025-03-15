@@ -3,14 +3,12 @@ import { useParams, useNavigate } from 'react-router';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { 
-  ShoppingCart, Heart, Star, ChevronRight, ChevronLeft, 
+  ShoppingCart, ChevronRight, ChevronLeft, 
   Truck, Shield, RotateCcw, Check, Info, ArrowLeft 
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { ProductGrid } from '../components/ProductGrid';
-import { LazyImage } from '../components/LazyImage';
 
 export default function ProductDetail() {
   const { productId } = useParams();
@@ -76,10 +74,9 @@ export default function ProductDetail() {
         );
         
         if (response.data.success) {
-          // Filter out the current product from featured products
           const filteredProducts = response.data.products.filter(
             p => p._id !== productId
-          ).slice(0, 4); // Limit to 4 products
+          ).slice(0, 4);
           
           setFeaturedProducts(filteredProducts);
         }
@@ -131,8 +128,6 @@ export default function ProductDetail() {
   
   const handleImageClick = (index) => {
     setCurrentImageIndex(index);
-    
-    // Scroll the thumbnail into view
     if (imageRefs.current[index]) {
       imageRefs.current[index].scrollIntoView({
         behavior: 'smooth',

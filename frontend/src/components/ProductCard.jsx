@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ShoppingCart, ChevronRightCircle } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import PropTypes from 'prop-types';
 import { LazyImage } from './LazyImage';
-import { memo } from 'react';
 
 // Memoize the component for better performance
 const ProductCard = ({ product }) => {
@@ -76,13 +75,6 @@ const ProductCard = ({ product }) => {
               ) : (
                 <ShoppingCart className="w-5 h-5" />
               )}
-            </button>
-            
-            <button 
-              className="p-2 bg-white rounded-full shadow-md hover:bg-primary hover:text-white transition-colors"
-              title="View on Amazon"
-            >
-              <ChevronRightCircle className="w-5 h-5" />
             </button>
           </div>
         </div>

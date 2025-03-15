@@ -134,31 +134,19 @@ export default function Cart() {
     return (subtotal + shipping + tax).toFixed(2);
   };
 
-  const handlePayment = async () => {
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/payment/paytm`, { items: products });
-      // Handle Paytm payment response here
-      window.location.href = response.data.paymentUrl; // Redirect to Paytm payment page
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast.error('Payment initiation failed.');
-    }
-  };
-
   const calculateTotals = (cartItems) => {
     // Calculate subtotal based on product structure
     const newSubtotal = cartItems.reduce((total, product) => {
-      // Get price from either nested productDetails or directly from product
       const price = product.productDetails?.price || product.price || 0;
-      const qty = product.quantity || 1;
-      return total + (parseFloat(price) * qty);
+      const productQuantity = product.quantity || 1;
+      return total + (parseFloat(price) * productQuantity);
     }, 0);
     
     console.log('Calculated subtotal:', newSubtotal);
     
     setSubtotal(newSubtotal);
-    setShipping(newSubtotal > 500 ? 0 : 100); // Free shipping over ₹500
-    setTax(newSubtotal * 0.18); // 18% tax
+    setShipping(newSubtotal > 500 ? 0 : 100);
+    setTax(newSubtotal * 0.18);
   };
 
   const CheckoutButton = () => {

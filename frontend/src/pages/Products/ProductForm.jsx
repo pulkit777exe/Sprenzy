@@ -18,7 +18,7 @@ export default function ProductForm() {
     imageUrl: '',
     additionalImages: ['', '', ''],
     category: '',
-    brand: '',
+    brand: 'Sprenzy',
     stock: 10,
     featured: false,
     amazonUrl: '',
