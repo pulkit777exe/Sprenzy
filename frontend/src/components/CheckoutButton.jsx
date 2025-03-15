@@ -1,63 +1,13 @@
 import { useState } from 'react';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
+import { ShoppingBag } from 'lucide-react';
 
 export const CheckoutButton = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
-  const handleCheckout = async () => {
-    try {
-      setIsProcessing(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        navigate('/signin');
-        return;
-      }
-      
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/payment/create-checkout-session`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.data.success) {
-        // Create a form to submit to Paytm
-        const form = document.createElement('form');
-        form.method = 'post';
-        form.action = response.data.txnUrl;
-
-        // Add all Paytm parameters as hidden fields
-        Object.entries(response.data.params).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = value;
-          form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-      } else {
-        toast.error(response.data.message || 'Failed to create checkout session');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      if (error.response?.status === 503) {
-        toast.error('Payment system is currently unavailable. Please try again later.');
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to process checkout');
-      }
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
 
   return (
@@ -72,7 +22,10 @@ export const CheckoutButton = () => {
           Processing...
         </div>
       ) : (
-        'Proceed to Checkout'
+        <div className="flex items-center justify-center">
+          <ShoppingBag className="w-5 h-5 mr-2" />
+          Proceed to Checkout
+        </div>
       )}
     </button>
   );

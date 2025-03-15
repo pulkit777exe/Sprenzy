@@ -14,10 +14,28 @@ export default function Home() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get(
+                setLoading(true);
+                // First try to fetch featured products
+                let response = await axios.get(
                     `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`
                 );
-                setProducts(response.data.products || response.data);
+                
+                if (response.data.success && response.data.products.length > 0) {
+                    setProducts(response.data.products);
+                } else {
+                    // If no featured products, fetch all products
+                    response = await axios.get(
+                        `${import.meta.env.VITE_BACKEND_API_URL}/product/all-products`
+                    );
+                    
+                    if (response.data.success) {
+                        // Limit to 8 products for the home page
+                        setProducts(response.data.products.slice(0, 8));
+                    } else {
+                        setError("Failed to load products");
+                        toast.error("Failed to load products");
+                    }
+                }
             } catch (error) {
                 console.error("Error fetching products:", error);
                 setError("Failed to load products");
@@ -34,11 +52,16 @@ export default function Home() {
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50">
             <Navbar />
             <Hero />
-            <div className="pt-20">
+            <div className="container mx-auto px-4 py-16">
+                <div className="mb-8 text-center">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Featured Products</h2>
+                    <p className="text-gray-600">Discover our selection of premium products</p>
+                </div>
                 <ProductGrid 
                     products={products} 
                     loading={loading} 
-                    error={error} 
+                    error={error}
+                    showHeading={false}
                 />
             </div>
             <Footer />        

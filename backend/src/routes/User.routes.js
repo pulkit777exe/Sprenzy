@@ -12,7 +12,8 @@ import {
     updateUserProfile,
     addUserAddress,
     updateUserAddress,
-    deleteUserAddress
+    deleteUserAddress,
+    addProductToCart
 } from "../controllers/User.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -33,5 +34,7 @@ userRouter.put("/profile", verifyJWT, updateUserProfile);
 userRouter.post("/address", verifyJWT, addUserAddress);
 userRouter.put("/address/:addressId", verifyJWT, updateUserAddress);
 userRouter.delete("/address/:addressId", verifyJWT, deleteUserAddress);
+
+userRouter.post("/addProduct/:productId", verifyJWT, addProductToCart);
 
 export { userRouter };

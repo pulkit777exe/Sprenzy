@@ -1,230 +1,552 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Save, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { Plus, Trash2, Image, Save, ArrowLeft } from 'lucide-react';
+import { LazyImage } from '../../components/LazyImage';
 
-const initialFormData = {
-  title: '',
-  description: '',
-  brand: '',
-  price: 0,
-  category: '',
-  imageUrl: '',
-  amazonUrl: '',
-  stock: 0
-};
-
-const categories = [
-  'Electronics',
-  'Clothing',
-  'Books',
-  'Home & Kitchen',
-  'Beauty',
-  'Sports',
-  'Toys',
-  'Other',
-];
-
-export default function ProductForm({ onSubmit, initialValues = {} }) {
+export default function ProductForm() {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = !!productId;
+  
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: initialValues.title || '',
-    description: initialValues.description || '',
-    brand: initialValues.brand || '',
-    price: initialValues.price || 0,
-    category: initialValues.category || '',
-    imageUrl: initialValues.imageUrl || '',
-    amazonUrl: initialValues.amazonUrl || '',
-    stock: initialValues.stock || 0
+    title: '',
+    description: '',
+    price: '',
+    imageUrl: '',
+    additionalImages: ['', '', ''],
+    category: '',
+    brand: '',
+    stock: 10,
+    featured: false,
+    amazonUrl: '',
+    specifications: [{ name: '', value: '' }]
   });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Pass the form data to the parent's handler
-    onSubmit(formData);
-    // Clear the form if it's not for editing
-    if (!initialValues.id) {
-      setFormData(initialFormData);
+  
+  useEffect(() => {
+    if (isEditMode) {
+      fetchProductData();
+    }
+  }, [productId]);
+  
+  const fetchProductData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_API_URL}/product/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (response.data.success) {
+        const product = response.data.product;
+        
+        // Ensure additionalImages has at least 3 slots
+        const additionalImages = product.additionalImages || [];
+        while (additionalImages.length < 3) {
+          additionalImages.push('');
+        }
+        
+        // Ensure specifications has at least one item
+        const specifications = product.specifications || [];
+        if (specifications.length === 0) {
+          specifications.push({ name: '', value: '' });
+        }
+        
+        setFormData({
+          ...product,
+          additionalImages,
+          specifications
+        });
+      } else {
+        toast.error('Failed to load product data');
+        navigate('/admin/products');
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      toast.error('Error loading product data');
+      navigate('/admin/products');
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' ? parseFloat(value) || 0 : value,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
-
-  const validateProduct = (product) => {
-    if (!product.title || !product.description || !product.price || !product.imageUrl || !product.category) {
-      return "Please fill in all required fields";
-    }
+  
+  const handleAdditionalImageChange = (index, value) => {
+    const updatedImages = [...formData.additionalImages];
+    updatedImages[index] = value;
     
-    if (isNaN(parseFloat(product.price)) || parseFloat(product.price) <= 0) {
-      return "Please enter a valid price";
-    }
-    
-    if (isNaN(parseInt(product.stock)) || parseInt(product.stock) < 0) {
-      return "Please enter a valid stock quantity";
-    }
-    
-    return null; // No errors
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: updatedImages
+    }));
   };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Product Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            value={formData.description}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="brand" className="block text-sm font-medium text-gray-700">
-            Brand
-          </label>
-          <input
-            type="text"
-            id="brand"
-            name="brand"
-            value={formData.brand}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price (₹)
-          </label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-            min="0"
-            step="5"
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            Category
-          </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          >
-            <option value="">Select a category</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-            Image URL
-          </label>
-          <input
-            type="url"
-            id="imageUrl"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="amazonUrl" className="block text-sm font-medium text-gray-700">
-            Amazon URL
-          </label>
-          <input
-            type="url"
-            id="amazonUrl"
-            name="amazonUrl"
-            value={formData.amazonUrl}
-            onChange={handleChange}
-            required
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-            Stock Quantity
-          </label>
-          <input
-            type="number"
-            id="stock"
-            name="stock"
-            value={formData.stock}
-            onChange={handleChange}
-            min="0"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-            required
-          />
-        </div>
+  
+  const addImageField = () => {
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: [...prev.additionalImages, '']
+    }));
+  };
+  
+  const removeImageField = (index) => {
+    const updatedImages = formData.additionalImages.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: updatedImages
+    }));
+  };
+  
+  const handleSpecificationChange = (index, field, value) => {
+    const updatedSpecs = [...formData.specifications];
+    updatedSpecs[index] = {
+      ...updatedSpecs[index],
+      [field]: value
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      specifications: updatedSpecs
+    }));
+  };
+  
+  const addSpecificationField = () => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: [...prev.specifications, { name: '', value: '' }]
+    }));
+  };
+  
+  const removeSpecificationField = (index) => {
+    const updatedSpecs = formData.specifications.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      specifications: updatedSpecs
+    }));
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      
+      // Validate required fields
+      if (!formData.title || !formData.description || !formData.price || 
+          !formData.imageUrl || !formData.category || !formData.brand) {
+        toast.error('Please fill all required fields');
+        return;
+      }
+      
+      // Filter out empty additional images
+      const filteredAdditionalImages = formData.additionalImages.filter(url => url.trim() !== '');
+      
+      // Filter out empty specifications
+      const filteredSpecifications = formData.specifications.filter(
+        spec => spec.name.trim() !== '' && spec.value.trim() !== ''
+      );
+      
+      const productData = {
+        ...formData,
+        additionalImages: filteredAdditionalImages,
+        specifications: filteredSpecifications
+      };
+      
+      const token = localStorage.getItem('token');
+      
+      let response;
+      if (isEditMode) {
+        response = await axios.put(
+          `${import.meta.env.VITE_BACKEND_API_URL}/product/update-product/${productId}`,
+          productData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } else {
+        response = await axios.post(
+          `${import.meta.env.VITE_BACKEND_API_URL}/product/create-products`,
+          productData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+      
+      if (response.data.success) {
+        toast.success(isEditMode ? 'Product updated successfully' : 'Product created successfully');
+        navigate('/admin/products');
+      } else {
+        toast.error(response.data.message || 'Failed to save product');
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Error saving product');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (loading && isEditMode) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
-
-      <div className="flex justify-end space-x-3">
+    );
+  }
+  
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 max-w-8xl mx-auto">
+      <div className="flex items-center justify-between mb-8 border-b pb-4">
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {isEditMode ? 'Edit Product' : 'Add New Product'}
+          </h1>
+        </div>
+        
+      </div>
+      
+      <form className="space-y-8">
+        {/* Basic Information Section */}
+        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                placeholder="Enter product title"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (₹) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                placeholder="Enter price"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              >
+                <option value="">Select Category</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Books">Books</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+                <option value="Beauty">Beauty</option>
+                <option value="Sports">Sports</option>
+                <option value="Toys">Toys</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Brand <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                placeholder="Enter brand name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stock Quantity
+              </label>
+              <input
+                type="number"
+                name="stock"
+                value={formData.stock}
+                onChange={handleChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                placeholder="Enter stock quantity"
+              />
+            </div>
+            
+            <div className="flex items-center h-full pt-6">
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleChange}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label htmlFor="featured" className="ml-2 block text-sm text-gray-700">
+                Featured Product
+              </label>
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              rows="4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              placeholder="Enter product description"
+            ></textarea>
+          </div>
+        </div>
+        
+        {/* Images Section */}
+        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Product Images</h2>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Main Image <span className="text-red-500">*</span>
+            </label>
+            <div className="flex">
+              <input
+                type="text"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-primary focus:border-primary"
+                placeholder="Enter main image URL"
+              />
+              {formData.imageUrl && (
+                <div className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg flex items-center">
+                  <Image className="w-5 h-5 text-gray-500" />
+                </div>
+              )}
+            </div>
+            
+            {formData.imageUrl && (
+              <div className="mt-3">
+                <LazyImage 
+                  src={formData.imageUrl} 
+                  alt="Main product image" 
+                  className="h-40 object-contain border border-gray-200 rounded-md p-1 bg-white"
+                  fallbackSrc="https://via.placeholder.com/400x400?text=Invalid+URL"
+                />
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Additional Images
+              </label>
+              <button
+                type="button"
+                onClick={addImageField}
+                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full border border-gray-300 hover:bg-gray-200 flex items-center"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Image
+              </button>
+            </div>
+            
+            {formData.additionalImages.length > 0 ? (
+              <div className="space-y-3">
+                {formData.additionalImages.map((url, index) => (
+                  <div key={index} className="flex items-start">
+                    <div className="flex-grow">
+                      <div className="flex">
+                        <input
+                          type="text"
+                          value={url}
+                          onChange={(e) => handleAdditionalImageChange(index, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-primary focus:border-primary"
+                          placeholder={`Additional image URL ${index + 1}`}
+                        />
+                        {url && (
+                          <div className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg flex items-center">
+                            <Image className="w-5 h-5 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      {url && (
+                        <div className="mt-2">
+                          <LazyImage 
+                            src={url} 
+                            alt={`Additional image ${index + 1}`} 
+                            className="h-20 object-contain border border-gray-200 rounded-md p-1 bg-white"
+                            fallbackSrc="https://via.placeholder.com/150?text=Invalid+URL"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImageField(index)}
+                      className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded-full"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">No additional images added yet.</p>
+            )}
+            
+            {formData.additionalImages.some(url => url) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {formData.additionalImages.map((url, index) => (
+                  url && (
+                    <div key={index} className="relative w-16 h-16 border rounded-lg overflow-hidden bg-white">
+                      <LazyImage
+                        src={url}
+                        alt={`Additional image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Specifications Section */}
+        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">Specifications</h2>
+            <button
+              type="button"
+              onClick={addSpecificationField}
+              className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full border border-gray-300 hover:bg-gray-200 flex items-center"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Specification
+            </button>
+          </div>
+          
+          {formData.specifications.length > 0 ? (
+            <div className="space-y-3">
+              {formData.specifications.map((spec, index) => (
+                <div key={index} className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={spec.name}
+                      onChange={(e) => handleSpecificationChange(index, 'name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                      placeholder="Specification name"
+                    />
+                    <input
+                      type="text"
+                      value={spec.value}
+                      onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                      placeholder="Specification value"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSpecificationField(index)}
+                    className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded-full"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No specifications added yet.</p>
+          )}
+        </div>
+        
+        {/* Additional Information */}
+        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Additional Information</h2>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Amazon URL (Optional)
+            </label>
+            <input
+              type="text"
+              name="amazonUrl"
+              value={formData.amazonUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              placeholder="Enter Amazon product URL"
+            />
+          </div>
+        </div>
         <button
           type="button"
-          onClick={() => setFormData(initialFormData)}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          onClick={handleSubmit}
+          disabled={loading}
+          className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-70"
         >
-          <X className="h-4 w-4 mr-2" />
-          Clear
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+          ) : (
+            <Save className="w-5 h-5 mr-2" />
+          )}
+          {isEditMode ? 'Update Product' : 'Save Product'}
         </button>
-        <button
-          type="submit"
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Product
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
-}
-
-ProductForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  initialValues: PropTypes.object
-};
+} 

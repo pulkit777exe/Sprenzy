@@ -3,6 +3,7 @@ import { ProductModel } from "../models/Product.models.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
+import { CartModel } from "../models/Cart.models.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "thankyou for telling";
 const SALT_ROUNDS = 10;
@@ -215,7 +216,7 @@ export const addToCart = async (req, res) => {
   try {
     const userId = req.user._id;
     const productId = req.params.id;
-    const { quantity = 0 } = req.body;
+    const { quantity = 1 } = req.body;
     
     const product = await ProductModel.findById(productId);
     if (!product) {
@@ -750,6 +751,69 @@ export const deleteUserAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error deleting address"
+    });
+  }
+};
+
+export const addProductToCart = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity = 1 } = req.body;
+    const userId = req.user._id;
+    
+    // Check if product exists
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+    
+    // Find user's cart or create one
+    let userCart = await CartModel.findOne({ user: userId });
+    
+    if (!userCart) {
+      userCart = await CartModel.create({
+        user: userId,
+        items: []
+      });
+    }
+    
+    // Check if product already in cart
+    const existingItemIndex = userCart.items.findIndex(
+      item => item.product.toString() === productId
+    );
+    
+    if (existingItemIndex > -1) {
+      // Update quantity if product already in cart
+      userCart.items[existingItemIndex].quantity += parseInt(quantity);
+    } else {
+      // Add new product to cart
+      userCart.items.push({
+        product: productId,
+        quantity: parseInt(quantity)
+      });
+    }
+    
+    // Calculate total price
+    userCart.totalPrice = userCart.items.reduce((total, item) => {
+      return total + (item.product.price * item.quantity);
+    }, 0);
+    
+    await userCart.save();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Product added to cart successfully",
+      cart: userCart
+    });
+  } catch (error) {
+    console.error("Error adding product to cart:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add product to cart",
+      error: error.message
     });
   }
 };

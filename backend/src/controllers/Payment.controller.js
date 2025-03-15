@@ -1,34 +1,17 @@
-import PaytmChecksum from 'paytmchecksum';
 import { UserModel } from '../models/User.models.js';
 import { ProductModel } from '../models/Product.models.js';
-import Cart from '../models/Cart.js'; // Assuming you have a Cart model
 import { OrderModel } from "../models/Order.models.js";
-import https from 'https';
+import axios from 'axios';
 
-// At the top of the file, add environment variable validation
-if (!process.env.PAYTM_MID || !process.env.PAYTM_MERCHANT_KEY) {
-  console.warn('Warning: Paytm credentials not properly configured. Payment functionality may be limited.');
+// Check if Payoneer credentials are configured
+if (!process.env.PAYONEER_MERCHANT_ID || !process.env.PAYONEER_API_KEY) {
+  console.warn('Warning: Payoneer credentials not properly configured. Payment functionality may be limited.');
 }
-
-// Use fallback empty strings if environment variables are not set
-const PAYTM_MID = process.env.PAYTM_MID;
-const PAYTM_MERCHANT_KEY = process.env.PAYTM_MERCHANT_KEY;
-const PAYTM_WEBSITE = process.env.PAYTM_WEBSITE || 'WEBSTAGING';
-const PAYTM_INDUSTRY_TYPE = process.env.PAYTM_INDUSTRY_TYPE || 'Retail';
-const PAYTM_CHANNEL_ID = process.env.PAYTM_CHANNEL_ID || 'WEB';
-
-const PAYTM_ENABLED = !!(PAYTM_MID && PAYTM_MERCHANT_KEY);
-
-// Add this constant for the callback URL
-const PAYTM_CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? `${process.env.BACKEND_URL}/api/payment/paytm-callback`
-  : 'http://localhost:3000/api/payment/paytm-callback';
 
 export const createCheckoutSession = async (req, res) => {
   try {
-    // Check if Paytm credentials are configured
-    if (!PAYTM_MID || !PAYTM_MERCHANT_KEY) {
-      console.error('Paytm credentials missing:', { PAYTM_MID, PAYTM_MERCHANT_KEY });
+    if (!process.env.PAYONEER_MERCHANT_ID || !process.env.PAYONEER_API_KEY) {
+      console.error('Payoneer credentials missing');
       return res.status(503).json({
         success: false,
         message: 'Payment system is not properly configured. Please try again later.'
@@ -38,7 +21,6 @@ export const createCheckoutSession = async (req, res) => {
     const userId = req.user._id;
     const { successUrl, cancelUrl, addressId } = req.body;
 
-    // Find the user with their cart
     const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -47,7 +29,6 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
-    // If cart is empty
     if (!user.userCart || user.userCart.length === 0) {
       return res.status(400).json({
         success: false,
@@ -55,17 +36,14 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
     
-    // Get shipping address
     let shippingAddress;
     if (addressId) {
       shippingAddress = user.addresses.find(addr => addr._id.toString() === addressId);
     } else {
-      // Get default address
       shippingAddress = user.addresses.find(addr => addr.isDefault);
     }
     
     if (!shippingAddress && user.addresses.length > 0) {
-      // Use first address if no default
       shippingAddress = user.addresses[0];
     }
     
@@ -76,168 +54,82 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
-    // Get products from cart
     const productIds = user.userCart.map(item => item.productId);
     const products = await ProductModel.find({ _id: { $in: productIds } });
 
-    // Calculate total amount
     let totalAmount = 0;
+    const items = [];
+
     products.forEach(product => {
-      const cartItem = user.userCart.find(
-        item => item.productId.toString() === product._id.toString()
+      const cartItem = user.userCart.find(item => 
+        item.productId.toString() === product._id.toString()
       );
-      totalAmount += parseFloat(product.price) * (cartItem ? cartItem.quantity : 1);
-    });
-
-    // Generate a unique order ID
-    const orderId = 'ORDER_' + Date.now();
-
-    // Prepare parameters for Paytm
-    const paytmParams = {
-      MID: PAYTM_MID,
-      WEBSITE: PAYTM_WEBSITE,
-      INDUSTRY_TYPE_ID: PAYTM_INDUSTRY_TYPE,
-      CHANNEL_ID: PAYTM_CHANNEL_ID,
-      ORDER_ID: orderId,
-      CUST_ID: userId.toString(),
-      TXN_AMOUNT: totalAmount.toString(),
-      EMAIL: user.email,
-      CALLBACK_URL: PAYTM_CALLBACK_URL,
-      MOBILE_NO: user.phone || ''
-    };
-
-    // Generate checksum
-    const checksum = await PaytmChecksum.generateSignature(
-      paytmParams,
-      PAYTM_MERCHANT_KEY
-    );
-
-    paytmParams.CHECKSUMHASH = checksum;
-
-    res.status(200).json({
-      success: true,
-      params: paytmParams,
-      txnUrl: process.env.NODE_ENV === 'production'
-        ? 'https://securegw.paytm.in/theia/processTransaction'
-        : 'https://securegw-stage.paytm.in/theia/processTransaction',
-      orderId: orderId,
-      amount: totalAmount,
-      metadata: {
-        userId: userId.toString(),
-        addressId: shippingAddress._id.toString()
+      
+      if (cartItem) {
+        const quantity = cartItem.quantity || 1;
+        const price = product.price;
+        totalAmount += price * quantity;
+        
+        items.push({
+          productId: product._id,
+          title: product.title,
+          price: price,
+          quantity: quantity
+        });
       }
     });
+    
+    // Add shipping cost if total is less than 500
+    const shippingCost = totalAmount < 500 ? 100 : 0;
+    totalAmount += shippingCost;
+    
+    // Add tax (18%)
+    const taxAmount = totalAmount * 0.18;
+    totalAmount += taxAmount;
+    
+    // Round to 2 decimal places
+    totalAmount = Math.round(totalAmount * 100) / 100;
+    
+    // Create order in database
+    const order = new OrderModel({
+      user: userId,
+      products: items.map(item => ({
+        product: item.productId,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      totalAmount: totalAmount,
+      paymentStatus: 'PENDING',
+      orderStatus: 'PENDING',
+      shippingAddress: {
+        name: shippingAddress.name || user.username,
+        address: shippingAddress.address,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        postalCode: shippingAddress.postalCode,
+        country: shippingAddress.country || 'India'
+      }
+    });
+    
+    await order.save();
+    
+    // Redirect to Payoneer checkout
+    return res.status(200).json({
+      success: true,
+      orderId: order._id,
+      redirectUrl: `/checkout?orderId=${order._id}`
+    });
   } catch (error) {
-    console.error('Paytm checkout error:', error);
-    res.status(500).json({
+    console.error('Checkout error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Failed to create checkout session',
+      message: "Error creating checkout session",
       error: error.message
     });
   }
 };
 
-export const paytmCallback = async (req, res) => {
-  try {
-    const paytmParams = {};
-    const paytmChecksum = req.body.CHECKSUMHASH;
-    delete req.body.CHECKSUMHASH;
-
-    for (const key in req.body) {
-      if (req.body.hasOwnProperty(key)) {
-        paytmParams[key] = req.body[key];
-      }
-    }
-
-    const isVerified = await PaytmChecksum.verifySignature(
-      paytmParams,
-      process.env.PAYTM_MERCHANT_KEY,
-      paytmChecksum
-    );
-
-    if (isVerified) {
-      // Payment successful
-      if (paytmParams.STATUS === 'TXN_SUCCESS') {
-        // Update order status
-        await OrderModel.findByIdAndUpdate(
-          paytmParams.ORDERID,
-          {
-            paymentStatus: 'COMPLETED',
-            orderStatus: 'PROCESSING',
-            transactionId: paytmParams.TXNID,
-            paymentDetails: paytmParams
-          }
-        );
-        
-        // Clear user's cart
-        const order = await OrderModel.findById(paytmParams.ORDERID);
-        if (order && order.user) {
-          await UserModel.findByIdAndUpdate(
-            order.user,
-            { userCart: [] }
-          );
-        }
-        
-        // Redirect to success page
-        return res.redirect(`${process.env.VITE_APP_URL}/payment/success?orderId=${paytmParams.ORDERID}`);
-      } else {
-        // Payment failed
-        await OrderModel.findByIdAndUpdate(
-          paytmParams.ORDERID,
-          {
-            paymentStatus: 'FAILED',
-            paymentDetails: paytmParams
-          }
-        );
-        
-        // Redirect to failure page
-        return res.redirect(`${process.env.VITE_APP_URL}/payment/failure?orderId=${paytmParams.ORDERID}`);
-      }
-    } else {
-      // Checksum mismatch
-      return res.redirect(`${process.env.VITE_APP_URL}/payment/failure?reason=checksum_failed`);
-    }
-  } catch (error) {
-    console.error('Paytm callback error:', error);
-    return res.redirect(`${process.env.VITE_APP_URL}/payment/failure?reason=server_error`);
-  }
-};
-
-export const checkoutSuccess = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    
-    // Cart should already be cleared in the callback, but we'll do it again just to be sure
-    await UserModel.findByIdAndUpdate(userId, { userCart: [] });
-    
-    res.status(200).json({
-      success: true,
-      message: 'Payment successful and cart cleared'
-    });
-  } catch (error) {
-    console.error('Checkout success error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error processing successful checkout',
-      error: error.message
-    });
-  }
-};
-
-// Add this function to fetch cart items
-export const getCartItems = async (req, res) => {
-  try {
-    const userId = req.user.id; // Assuming you have user authentication
-    const cartItems = await Cart.find({ userId });
-    res.json(cartItems);
-  } catch (error) {
-    console.error('Error fetching cart items:', error);
-    res.status(500).json({ message: 'Failed to fetch cart items' });
-  }
-};
-
-// Add this function to handle Paytm payment initiation
-export const initiatePaytmPayment = async (req, res) => {
+export const createPayoneerPayment = async (req, res) => {
   try {
     const { items, amount, userId } = req.body;
     
@@ -266,47 +158,33 @@ export const initiatePaytmPayment = async (req, res) => {
     // Generate a unique order ID
     const orderId = order._id.toString();
     
-    // Prepare Paytm parameters
-    const paytmParams = {
-      MID: process.env.PAYTM_MID,
-      WEBSITE: process.env.PAYTM_WEBSITE,
-      INDUSTRY_TYPE_ID: process.env.PAYTM_INDUSTRY_TYPE,
-      CHANNEL_ID: process.env.PAYTM_CHANNEL_ID,
-      ORDER_ID: orderId,
-      CUST_ID: userId || req.user._id.toString(),
-      TXN_AMOUNT: amount.toString(),
-      CALLBACK_URL: `${process.env.BACKEND_URL}/api/v1/payment/paytm/callback`,
-      EMAIL: req.user.email || '',
-      MOBILE_NO: ''
+    // Payoneer API integration
+    // Note: This is a simplified example. You'll need to use Payoneer's actual API
+    const payoneerPayload = {
+      merchant_id: process.env.PAYONEER_MERCHANT_ID,
+      amount: amount,
+      currency: 'INR',
+      order_id: orderId,
+      description: `Order #${orderId}`,
+      customer_email: req.user.email,
+      redirect_url: `${process.env.FRONTEND_URL}/payment/success?orderId=${orderId}`,
+      cancel_url: `${process.env.FRONTEND_URL}/payment/failure?orderId=${orderId}`,
+      webhook_url: `${process.env.BACKEND_URL}/api/v1/payment/payoneer/webhook`
     };
     
-    // Generate checksum
-    const paytmChecksum = await PaytmChecksum.generateSignature(
-      JSON.stringify(paytmParams), 
-      process.env.PAYTM_MERCHANT_KEY
-    );
+    // In a real implementation, you would call Payoneer's API here
+    // For now, we'll simulate a successful response
     
-    paytmParams.CHECKSUMHASH = paytmChecksum;
+    // Simulate Payoneer payment URL
+    const paymentUrl = `https://payoneer.com/pay?order=${orderId}&amount=${amount}`;
     
-    // For production
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(200).json({
-        success: true,
-        params: paytmParams,
-        formHtml: generatePaytmForm(paytmParams)
-      });
-    } else {
-      // For development/testing - use Paytm staging API
-      const paytmTxnUrl = 'https://securegw-stage.paytm.in/theia/processTransaction';
-      return res.status(200).json({
-        success: true,
-        params: paytmParams,
-        paymentUrl: `${paytmTxnUrl}?${new URLSearchParams(paytmParams).toString()}`,
-        formHtml: generatePaytmForm(paytmParams, paytmTxnUrl)
-      });
-    }
+    return res.status(200).json({
+      success: true,
+      orderId: orderId,
+      paymentUrl: paymentUrl
+    });
   } catch (error) {
-    console.error('Paytm payment error:', error);
+    console.error('Payment error:', error);
     return res.status(500).json({
       success: false,
       message: "Error initiating payment",
@@ -315,14 +193,92 @@ export const initiatePaytmPayment = async (req, res) => {
   }
 };
 
-// Helper function to generate Paytm form
-const generatePaytmForm = (params, url = 'https://securegw-stage.paytm.in/theia/processTransaction') => {
-  let formHtml = `<form id="paytmForm" action="${url}" method="post">`;
-  
-  for (const key in params) {
-    formHtml += `<input type="hidden" name="${key}" value="${params[key]}">`;
+export const payoneerWebhook = async (req, res) => {
+  try {
+    const { order_id, status, transaction_id } = req.body;
+    
+    if (!order_id || !status) {
+      return res.status(400).json({ success: false, message: 'Invalid webhook data' });
+    }
+    
+    if (status === 'COMPLETED') {
+      await OrderModel.findByIdAndUpdate(
+        order_id,
+        {
+          paymentStatus: 'COMPLETED',
+          orderStatus: 'PROCESSING',
+          transactionId: transaction_id,
+          paymentDetails: req.body
+        }
+      );
+      
+      // Clear user's cart
+      const order = await OrderModel.findById(order_id);
+      if (order && order.user) {
+        await UserModel.findByIdAndUpdate(
+          order.user,
+          { userCart: [] }
+        );
+      }
+    } else if (status === 'FAILED') {
+      await OrderModel.findByIdAndUpdate(
+        order_id,
+        {
+          paymentStatus: 'FAILED',
+          paymentDetails: req.body
+        }
+      );
+    }
+    
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Payoneer webhook error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
-  
-  formHtml += '</form>';
-  return formHtml;
+};
+
+export const checkoutSuccess = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required"
+      });
+    }
+    
+    const order = await OrderModel.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+    
+    // Update order status
+    order.paymentStatus = 'COMPLETED';
+    order.orderStatus = 'PROCESSING';
+    await order.save();
+    
+    // Clear user's cart
+    await UserModel.findByIdAndUpdate(
+      order.user,
+      { userCart: [] }
+    );
+    
+    return res.status(200).json({
+      success: true,
+      message: "Payment completed successfully",
+      order
+    });
+  } catch (error) {
+    console.error('Checkout success error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error processing successful checkout",
+      error: error.message
+    });
+  }
 }; 

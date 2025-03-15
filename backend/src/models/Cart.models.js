@@ -6,6 +6,8 @@ const cartItemSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
-const Cart = mongoose.model('Cart', cartItemSchema);
+const CartModel = mongoose.model('Cart', cartItemSchema);
 
-export default Cart; 
+export{
+  CartModel
+}; 

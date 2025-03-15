@@ -3,59 +3,54 @@ import { UserModel } from "../models/User.models.js";
 
 export const createProduct = async (req, res) => {
   try {
-    console.log('Received product data:', req.body);
-    const { name, title, description, brand, price, imageUrl, category, amazonUrl, stock } = req.body;
-    
-    // Use either name or title (whichever is provided)
-    const productTitle = title || name;
-    
-    // Validate required fields
-    if (!productTitle || !description || !price || !imageUrl || !category) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields: title/name, description, price, imageUrl, and category are required"
-      });
-    }
-    
-    // Validate price and stock
-    if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Price must be a positive number"
-      });
-    }
-    
-    if (isNaN(parseInt(stock)) || parseInt(stock) < 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Stock must be a non-negative integer"
-      });
-    }
-    
-    // Create the product
-    const newProduct = new ProductModel({
-      title: productTitle, // Use the title field as in your schema
+    const {
+      title,
       description,
-      brand,
-      price: parseFloat(price),
+      price,
       imageUrl,
+      additionalImages,
       category,
+      brand,
+      stock,
+      featured,
       amazonUrl,
-      stock: parseInt(stock)
+      specifications
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !price || !imageUrl || !category || !brand) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided"
+      });
+    }
+
+    const newProduct = new ProductModel({
+      title,
+      description,
+      price,
+      imageUrl,
+      additionalImages: additionalImages || [],
+      category,
+      brand,
+      stock: stock || 10,
+      featured: featured || false,
+      amazonUrl,
+      specifications: specifications || []
     });
-    
+
     await newProduct.save();
-    
+
     return res.status(201).json({
       success: true,
       message: "Product created successfully",
       product: newProduct
     });
   } catch (error) {
-    console.error('Create product error:', error);
+    console.error("Error creating product:", error);
     return res.status(500).json({
       success: false,
-      message: "Error creating product",
+      message: "Failed to create product",
       error: error.message
     });
   }
@@ -65,40 +60,24 @@ export const deleteProduct = async (req, res) => {
   try {
     const { productId } = req.params;
     
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required"
-      });
-    }
-
-    // Check if product exists
-    const product = await ProductModel.findById(productId);
-    if (!product) {
+    const deletedProduct = await ProductModel.findByIdAndDelete(productId);
+    
+    if (!deletedProduct) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
-
-    // Delete the product
-    await ProductModel.findByIdAndDelete(productId);
     
-    // Also remove this product from all user carts
-    await UserModel.updateMany(
-      { "userCart.productId": productId },
-      { $pull: { userCart: { productId: productId } } }
-    );
-
     return res.status(200).json({
       success: true,
       message: "Product deleted successfully"
     });
   } catch (error) {
-    console.error('Delete product error:', error);
+    console.error("Error deleting product:", error);
     return res.status(500).json({
       success: false,
-      message: "Error deleting product",
+      message: "Failed to delete product",
       error: error.message
     });
   }
@@ -174,19 +153,26 @@ export const viewAllProducts = async (req, res) => {
   }
 };
 
-export const fetchFeaturedProducts = async (req, res) => {
+export const getFeaturedProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find().limit(12);
-    console.log("Fetching featured products");
-
-    if (products.length === 0) {
-      return res.status(404).json({ message: "No featured products found" });
+    let featuredProducts = await ProductModel.find({ featured: true }).lean();
+    
+    // If no featured products, return some regular products
+    if (featuredProducts.length === 0) {
+      featuredProducts = await ProductModel.find().limit(8).lean();
     }
-
-    res.json(products);
+    
+    return res.status(200).json({
+      success: true,
+      products: featuredProducts
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "An error occurred while fetching products" });
+    console.error("Error fetching featured products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch featured products",
+      error: error.message
+    });
   }
 };
 
@@ -233,5 +219,131 @@ export const viewUserProducts = async (req, res) => {
     res.status(500).json({
       error: "Internal server error"
     })
+  }
+};
+
+export const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    
+    const product = await ProductModel.findById(productId).lean();
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      product
+    });
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch product",
+      error: error.message
+    });
+  }
+};
+
+export const getAllProducts = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 12,
+      category,
+      minPrice,
+      maxPrice,
+      search,
+      sort = 'createdAt',
+      order = 'desc'
+    } = req.query;
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build filter object
+    const filter = {};
+    
+    if (category) {
+      filter.category = category;
+    }
+    
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter.price = {};
+      if (minPrice !== undefined) filter.price.$gte = parseInt(minPrice);
+      if (maxPrice !== undefined) filter.price.$lte = parseInt(maxPrice);
+    }
+    
+    if (search) {
+      filter.$text = { $search: search };
+    }
+    
+    // Build sort object
+    const sortObj = {};
+    sortObj[sort] = order === 'asc' ? 1 : -1;
+    
+    // Execute query with pagination
+    const products = await ProductModel.find(filter)
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Get total count for pagination
+    const totalProducts = await ProductModel.countDocuments(filter);
+    
+    return res.status(200).json({
+      success: true,
+      products,
+      pagination: {
+        total: totalProducts,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(totalProducts / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
+      error: error.message
+    });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const updateData = req.body;
+
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      product: updatedProduct
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update product",
+      error: error.message
+    });
   }
 };

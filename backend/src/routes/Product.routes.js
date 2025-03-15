@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { 
   createProduct,  
-  fetchFeaturedProducts, 
+  getFeaturedProducts, 
   updateProducts, 
   viewAllProducts, 
   viewUserProducts,
   fetchAllProducts,
-  deleteProduct
+  deleteProduct,
+  getProductById
 } from "../controllers/Product.controller.js";
 import { verifyJWT, isAdmin } from "../middleware/auth.middleware.js";
 
@@ -14,7 +15,8 @@ const productRouter = Router();
 
 productRouter.get("/all-products", fetchAllProducts);
 productRouter.get("/products", viewAllProducts);
-productRouter.get("/featuredProducts", fetchFeaturedProducts);
+productRouter.get("/featuredProducts", getFeaturedProducts);
+productRouter.get("/:productId", getProductById);
 
 productRouter.get("/userProducts", verifyJWT, viewUserProducts);
 
