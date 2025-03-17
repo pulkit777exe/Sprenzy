@@ -2,12 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { userRouter } from './routes/User.routes.js';
-import productRouter from './routes/Product.routes.js';
-import { paymentRouter } from './routes/Payment.routes.js';
-import { adminRouter } from './routes/Admin.routes.js';
-dotenv.config();
-
 dotenv.config();
 
 const app = express();
@@ -28,6 +22,11 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.send('Server is running!');
 });
+
+import { userRouter } from './routes/User.routes.js';
+import { productRouter } from './routes/Product.routes.js';
+import { paymentRouter } from './routes/Payment.routes.js';
+import { adminRouter } from './routes/Admin.routes.js';
 
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/product', productRouter);

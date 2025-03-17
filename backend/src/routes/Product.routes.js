@@ -24,4 +24,4 @@ productRouter.post("/create-products", verifyJWT, isAdmin, createProduct);
 productRouter.delete("/delete-product/:productId", verifyJWT, isAdmin, deleteProduct);
 productRouter.put("/update-product/:id", verifyJWT, isAdmin, updateProducts);
 
-export default productRouter;
+export { productRouter };

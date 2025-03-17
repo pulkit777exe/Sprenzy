@@ -157,7 +157,6 @@ export const getFeaturedProducts = async (req, res) => {
   try {
     let featuredProducts = await ProductModel.find({ featured: true }).lean();
     
-    // If no featured products, return some regular products
     if (featuredProducts.length === 0) {
       featuredProducts = await ProductModel.find().limit(8).lean();
     }
@@ -264,7 +263,6 @@ export const getAllProducts = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Build filter object
     const filter = {};
     
     if (category) {
@@ -280,19 +278,15 @@ export const getAllProducts = async (req, res) => {
     if (search) {
       filter.$text = { $search: search };
     }
-    
-    // Build sort object
     const sortObj = {};
     sortObj[sort] = order === 'asc' ? 1 : -1;
-    
-    // Execute query with pagination
+    n
     const products = await ProductModel.find(filter)
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
     
-    // Get total count for pagination
     const totalProducts = await ProductModel.countDocuments(filter);
     
     return res.status(200).json({

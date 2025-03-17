@@ -282,18 +282,14 @@ export const getCartProducts = async (req, res) => {
       });
     }
     
-    // If userCart is an array of product IDs, populate them
     if (user.userCart && user.userCart.length > 0) {
-      // Check if userCart contains objects with productId or just product IDs
       const isObjectArray = typeof user.userCart[0] === 'object' && user.userCart[0] !== null;
       
       let populatedCart;
       if (isObjectArray) {
-        // If userCart contains objects with productId
         const productIds = user.userCart.map(item => item.productId);
         const products = await ProductModel.find({ _id: { $in: productIds } });
         
-        // Map products to include quantity
         populatedCart = user.userCart.map(cartItem => {
           const productDetails = products.find(p => p._id.toString() === cartItem.productId.toString());
           return {
@@ -302,7 +298,6 @@ export const getCartProducts = async (req, res) => {
           };
         });
       } else {
-        // If userCart is just an array of product IDs
         populatedCart = await ProductModel.find({ _id: { $in: user.userCart } });
       }
       
@@ -539,7 +534,6 @@ export const updateUserProfile = async (req, res) => {
       });
     }
     
-    // Update fields if provided
     if (username) user.username = username;
     if (email) user.email = email;
     if (phone) user.phone = phone;
@@ -581,7 +575,6 @@ export const addUserAddress = async (req, res) => {
       isDefault 
     } = req.body;
     
-    // Validate required fields
     if (!fullName || !streetAddress || !city || !state || !postalCode || !phone) {
       return res.status(400).json({
         success: false,
@@ -597,20 +590,17 @@ export const addUserAddress = async (req, res) => {
         message: "User not found"
       });
     }
-    
-    // Initialize addresses array if it doesn't exist
+
     if (!user.addresses) {
       user.addresses = [];
     }
     
-    // If this is the first address or isDefault is true, update all other addresses
     if (isDefault || user.addresses.length === 0) {
       user.addresses.forEach(addr => {
         addr.isDefault = false;
       });
     }
-    
-    // Add new address
+
     user.addresses.push({
       fullName,
       streetAddress,
@@ -619,7 +609,7 @@ export const addUserAddress = async (req, res) => {
       postalCode,
       country,
       phone,
-      isDefault: isDefault || user.addresses.length === 0 // First address is default
+      isDefault: isDefault || user.addresses.length === 0 
     });
     
     await user.save();
@@ -662,7 +652,6 @@ export const updateUserAddress = async (req, res) => {
       });
     }
     
-    // Find the address to update
     const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
     
     if (addressIndex === -1) {
@@ -672,7 +661,6 @@ export const updateUserAddress = async (req, res) => {
       });
     }
     
-    // Update address fields if provided
     if (fullName) user.addresses[addressIndex].fullName = fullName;
     if (streetAddress) user.addresses[addressIndex].streetAddress = streetAddress;
     if (city) user.addresses[addressIndex].city = city;
@@ -681,7 +669,6 @@ export const updateUserAddress = async (req, res) => {
     if (country) user.addresses[addressIndex].country = country;
     if (phone) user.addresses[addressIndex].phone = phone;
     
-    // Handle default address
     if (isDefault) {
       user.addresses.forEach((addr, idx) => {
         addr.isDefault = idx === addressIndex;
@@ -718,7 +705,6 @@ export const deleteUserAddress = async (req, res) => {
       });
     }
     
-    // Find the address to delete
     const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
     
     if (addressIndex === -1) {
@@ -728,13 +714,10 @@ export const deleteUserAddress = async (req, res) => {
       });
     }
     
-    // Check if it's the default address
     const isDefault = user.addresses[addressIndex].isDefault;
     
-    // Remove the address
     user.addresses.splice(addressIndex, 1);
     
-    // If it was the default address and there are other addresses, set a new default
     if (isDefault && user.addresses.length > 0) {
       user.addresses[0].isDefault = true;
     }
@@ -761,7 +744,6 @@ export const addProductToCart = async (req, res) => {
     const { quantity = 1 } = req.body;
     const userId = req.user._id;
     
-    // Check if product exists
     const product = await ProductModel.findById(productId);
     if (!product) {
       return res.status(404).json({
@@ -769,8 +751,7 @@ export const addProductToCart = async (req, res) => {
         message: "Product not found"
       });
     }
-    
-    // Find user's cart or create one
+
     let userCart = await CartModel.findOne({ user: userId });
     
     if (!userCart) {
@@ -780,23 +761,19 @@ export const addProductToCart = async (req, res) => {
       });
     }
     
-    // Check if product already in cart
     const existingItemIndex = userCart.items.findIndex(
       item => item.product.toString() === productId
     );
     
     if (existingItemIndex > -1) {
-      // Update quantity if product already in cart
       userCart.items[existingItemIndex].quantity += parseInt(quantity);
     } else {
-      // Add new product to cart
       userCart.items.push({
         product: productId,
         quantity: parseInt(quantity)
       });
     }
     
-    // Calculate total price
     userCart.totalPrice = userCart.items.reduce((total, item) => {
       return total + (item.product.price * item.quantity);
     }, 0);

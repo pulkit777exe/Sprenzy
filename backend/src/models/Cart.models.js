@@ -8,6 +8,4 @@ const cartItemSchema = new mongoose.Schema({
 
 const CartModel = mongoose.model('Cart', cartItemSchema);
 
-export{
-  CartModel
-}; 
+export{ CartModel }; 

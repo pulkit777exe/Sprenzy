@@ -15,7 +15,6 @@ export default function Home() {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                // First try to fetch featured products
                 let response = await axios.get(
                     `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`
                 );
@@ -23,13 +22,11 @@ export default function Home() {
                 if (response.data.success && response.data.products.length > 0) {
                     setProducts(response.data.products);
                 } else {
-                    // If no featured products, fetch all products
                     response = await axios.get(
                         `${import.meta.env.VITE_BACKEND_API_URL}/product/all-products`
                     );
                     
                     if (response.data.success) {
-                        // Limit to 8 products for the home page
                         setProducts(response.data.products.slice(0, 8));
                     } else {
                         setError("Failed to load products");

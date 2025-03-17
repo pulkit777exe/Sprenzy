@@ -1,9 +1,7 @@
 import { UserModel } from '../models/User.models.js';
 import { ProductModel } from '../models/Product.models.js';
 import { OrderModel } from "../models/Order.models.js";
-import axios from 'axios';
 
-// Check if Payoneer credentials are configured
 if (!process.env.PAYONEER_MERCHANT_ID || !process.env.PAYONEER_API_KEY) {
   console.warn('Warning: Payoneer credentials not properly configured. Payment functionality may be limited.');
 }
@@ -78,19 +76,15 @@ export const createCheckoutSession = async (req, res) => {
         });
       }
     });
-    
-    // Add shipping cost if total is less than 500
+
     const shippingCost = totalAmount < 500 ? 100 : 0;
     totalAmount += shippingCost;
     
-    // Add tax (18%)
     const taxAmount = totalAmount * 0.18;
     totalAmount += taxAmount;
     
-    // Round to 2 decimal places
     totalAmount = Math.round(totalAmount * 100) / 100;
     
-    // Create order in database
     const order = new OrderModel({
       user: userId,
       products: items.map(item => ({
@@ -140,7 +134,6 @@ export const createPayoneerPayment = async (req, res) => {
       });
     }
     
-    // Create an order in your database
     const order = new OrderModel({
       user: userId || req.user._id,
       products: items.map(item => ({
@@ -212,7 +205,6 @@ export const payoneerWebhook = async (req, res) => {
         }
       );
       
-      // Clear user's cart
       const order = await OrderModel.findById(order_id);
       if (order && order.user) {
         await UserModel.findByIdAndUpdate(
