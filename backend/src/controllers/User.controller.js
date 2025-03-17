@@ -744,7 +744,15 @@ export const addProductToCart = async (req, res) => {
     const { quantity = 1 } = req.body;
     const userId = req.user._id;
 
-    // Validate product exists
+    // Validate inputs
+    if (!productId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid product or user ID'
+      });
+    }
+
+    // Find the product
     const product = await ProductModel.findById(productId);
     if (!product) {
       return res.status(404).json({
@@ -753,7 +761,7 @@ export const addProductToCart = async (req, res) => {
       });
     }
 
-    // Find user and update cart
+    // Find the user and update cart
     const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -762,14 +770,21 @@ export const addProductToCart = async (req, res) => {
       });
     }
 
+    // Initialize userCart if it doesn't exist
+    if (!user.userCart) {
+      user.userCart = [];
+    }
+
     // Check if product already in cart
-    const existingCartItem = user.userCart.find(
+    const existingCartItemIndex = user.userCart.findIndex(
       item => item.productId.toString() === productId
     );
 
-    if (existingCartItem) {
-      existingCartItem.quantity += quantity;
+    if (existingCartItemIndex !== -1) {
+      // Update existing item
+      user.userCart[existingCartItemIndex].quantity += quantity;
     } else {
+      // Add new item
       user.userCart.push({
         productId,
         quantity

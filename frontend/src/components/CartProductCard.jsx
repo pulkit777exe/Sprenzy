@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../utils/api';
 import { Trash2, ExternalLink, Plus, Minus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
@@ -20,28 +20,13 @@ export const CartProductCard = ({
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
       const productId = product.productId || product._id;
-      
-      console.log('Attempting to delete product from cart:', productId);
-      
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${productId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
+      await api.delete(`/user/cart/${productId}`);
       onDelete(productId);
       toast.success('Product removed from cart');
     } catch (error) {
       console.error('Error deleting product:', error);
-      console.error('Error response:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Failed to remove product from cart');
+      toast.error(error.response?.data?.message || 'Failed to remove product');
     }
   };
 
@@ -52,20 +37,8 @@ export const CartProductCard = ({
     setIsUpdating(true);
     
     try {
-      const token = localStorage.getItem('token');
       const productId = product.productId || product._id;
-      
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/cart/${productId}/quantity`,
-        { quantity: newQuantity },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
+      await api.put(`/user/cart/${productId}/quantity`, { quantity: newQuantity });
       onUpdateQuantity(productId, newQuantity);
     } catch (error) {
       console.error('Error updating quantity:', error);

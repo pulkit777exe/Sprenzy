@@ -8,7 +8,6 @@ import { toast } from 'react-hot-toast';
 import ProductForm from './Products/ProductForm';
 import ProductList from './Products/ProductList';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
-import { api } from '../utils/api';
 
 export default function CreateProducts() {
   const { user } = useAuth();

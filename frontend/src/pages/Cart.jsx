@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
 import { ShoppingBag } from 'lucide-react';
-import { api } from '../utils/api';
 
 export default function Cart() {
   const [products, setProducts] = useState([]);

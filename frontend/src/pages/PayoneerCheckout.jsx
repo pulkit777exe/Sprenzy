@@ -6,7 +6,6 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, ArrowLeft, Loader } from 'lucide-react';
-import { api } from '../utils/api';
 
 export default function PayoneerCheckout() {
   const { user } = useAuth();

@@ -2,13 +2,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
 import { LazyImage } from './LazyImage';
+import { api } from '../utils/api';
 
-// Memoize the component for better performance
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onAddToCart }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [addingToCart, setAddingToCart] = useState(false);
@@ -23,15 +22,28 @@ const ProductCard = ({ product }) => {
       return;
     }
     
+    if (addingToCart) return; // Prevent multiple clicks
+    
     try {
       setAddingToCart(true);
       
+      // Check if product exists and has an ID
+      if (!product?._id) {
+        throw new Error('Invalid product');
+      }
+      
       const response = await api.post(`/user/addProduct/${product._id}`, {
-        quantity: 1
+        quantity: 1,
+        productId: product._id // Add this explicitly
       });
       
       if (response.data.success) {
         toast.success('Product added to cart');
+        if (onAddToCart) {
+          onAddToCart(product._id);
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to add to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -40,7 +52,7 @@ const ProductCard = ({ product }) => {
       } else if (error.response?.status === 500) {
         toast.error('Server error. Please try again later.');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to add to cart');
+        toast.error(error.message || 'Failed to add to cart');
       }
     } finally {
       setAddingToCart(false);
@@ -90,7 +102,13 @@ const ProductCard = ({ product }) => {
 };
 
 ProductCard.propTypes = {
-  product: PropTypes.object.isRequired,
+  product: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    price: PropTypes.number.isRequired,
+    imageUrl: PropTypes.string.isRequired,
+  }).isRequired,
+  onAddToCart: PropTypes.func,
 };
 
 export { ProductCard };

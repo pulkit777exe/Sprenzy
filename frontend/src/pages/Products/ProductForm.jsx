@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../utils/api';
 import { toast } from 'react-hot-toast';
 import { Plus, Trash2, Image, Save, ArrowLeft } from 'lucide-react';
 import { LazyImage } from '../../components/LazyImage';

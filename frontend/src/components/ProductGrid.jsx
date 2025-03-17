@@ -1,10 +1,10 @@
 import { ProductCard } from "./ProductCard";
 import { useState, useMemo } from "react";
-import axios from "axios";
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { ShoppingBag } from 'lucide-react';
+import { api } from '../utils/api';
 
 export const ProductGrid = ({ products = [], loading = false, error = null, showHeading = false, title = "Featured Products" }) => {
   const [addingToCart, setAddingToCart] = useState(false);
@@ -13,33 +13,40 @@ export const ProductGrid = ({ products = [], loading = false, error = null, show
 
   const handleAddToCart = async (productId) => {
     if (!user) {
+      toast.error('Please sign in to add items to your cart');
       navigate('/signin');
       return;
     }
 
+    if (addingToCart) return; // Prevent multiple clicks
+
     try {
       setAddingToCart(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/addProduct/${productId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      // Validate productId
+      if (!productId) {
+        throw new Error('Invalid product ID');
+      }
+
+      const response = await api.post(`/user/addProduct/${productId}`, {
+        quantity: 1,
+        productId: productId // Add this explicitly
+      });
 
       if (response.data.success) {
         toast.success('Product added to cart successfully!');
+      } else {
+        throw new Error(response.data.message || 'Failed to add to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (error.response?.status === 401) {
+        toast.error('Please sign in to continue');
         navigate('/signin');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to add to cart');
+        toast.error(error.message || 'Failed to add to cart');
       }
     } finally {
       setAddingToCart(false);
