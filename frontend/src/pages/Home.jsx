@@ -15,16 +15,18 @@ export default function Home() {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                let response = await axios.get(
-                    `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`
-                );
+                const url = `${import.meta.env.VITE_BACKEND_API_URL}/product/featuredProducts`;
+                console.log('Fetching products from:', url);
+                
+                let response = await axios.get(url);
                 
                 if (response.data.success && response.data.products.length > 0) {
                     setProducts(response.data.products);
                 } else {
-                    response = await axios.get(
-                        `${import.meta.env.VITE_BACKEND_API_URL}/product/all-products`
-                    );
+                    const allProductsUrl = `${import.meta.env.VITE_BACKEND_API_URL}/product/all-products`;
+                    console.log('Fetching all products from:', allProductsUrl);
+                    
+                    response = await axios.get(allProductsUrl);
                     
                     if (response.data.success) {
                         setProducts(response.data.products.slice(0, 8));
@@ -35,6 +37,7 @@ export default function Home() {
                 }
             } catch (error) {
                 console.error("Error fetching products:", error);
+                console.error("Error details:", error.response);
                 setError("Failed to load products");
                 toast.error("Failed to load products");
             } finally {

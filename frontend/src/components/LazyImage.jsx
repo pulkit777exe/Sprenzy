@@ -8,6 +8,7 @@ export const LazyImage = ({ src, alt, className, fallbackSrc }) => {
 
   useEffect(() => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = src;
     img.onload = () => {
       setImageSrc(src);
@@ -25,6 +26,7 @@ export const LazyImage = ({ src, alt, className, fallbackSrc }) => {
     <img 
       src={error && fallbackSrc ? fallbackSrc : imageSrc} 
       alt={alt} 
+      crossOrigin="anonymous"
       className={`${className} ${!isLoaded ? 'animate-pulse bg-gray-200' : ''}`}
     />
   );
@@ -39,5 +41,5 @@ LazyImage.propTypes = {
 
 LazyImage.defaultProps = {
   className: '',
-  fallbackSrc: 'https://archive.org/download/placeholder-image/placeholder-image.jpg'
+  fallbackSrc: 'https://placehold.co/600x400?text=Image+Not+Available'
 }; 

@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
+          console.log('Verifying token...');
           const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/user/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
@@ -20,13 +21,16 @@ export const AuthProvider = ({ children }) => {
           });
           
           if (response.data.success) {
+            console.log('Token verified successfully');
             setUser(response.data.user);
           } else {
+            console.warn('Token verification failed:', response.data);
             localStorage.removeItem('token');
           }
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        console.error('Error details:', error.response?.data);
         localStorage.removeItem('token');
       } finally {
         setLoading(false);
@@ -38,16 +42,20 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login with:', { email });
+      console.log('API URL:', `${import.meta.env.VITE_BACKEND_API_URL}/user/signin`);
+      
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_API_URL}/user/signin`,
         { email, password },
         {
           headers: {
             'Content-Type': 'application/json'
-          },
-          timeout: 5000 // 5 second timeout
+          }
         }
       );
+      
+      console.log('Login response:', response.data);
       
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
@@ -58,11 +66,9 @@ export const AuthProvider = ({ children }) => {
       return { error: response.data.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
-      if (error.code === 'ERR_NETWORK') {
-        return { 
-          error: 'Unable to connect to server. Please check if the server is running.' 
-        };
-      }
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
       return { 
         error: error.response?.data?.message || 'Login failed. Please try again.' 
       };
