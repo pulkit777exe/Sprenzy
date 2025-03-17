@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import ProductForm from './Products/ProductForm';
 import ProductList from './Products/ProductList';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
+import { api } from '../utils/api';
 
 export default function CreateProducts() {
   const { user } = useAuth();
@@ -106,40 +107,22 @@ export default function CreateProducts() {
     }
   };
 
-  const handleUpdateProduct = async (index, productData) => {
+  const handleUpdateProduct = async (productId, data) => {
     try {
-      // Validate stock
-      if (productData.stock === undefined || productData.stock < 0) {
-        toast.error('Please enter a valid stock quantity');
-        return;
-      }
-
-      const token = localStorage.getItem('token');
-      const productId = products[index]._id;
-      
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_API_URL}/product/update-product/${productId}`,
-        {
-          ...productData,
-          stock: parseInt(productData.stock) // Ensure stock is a number
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.put(`/product/update-product/${productId}`, data);
       
       if (response.data.success) {
         toast.success('Product updated successfully');
-        fetchProducts();
-      } else {
-        toast.error('Failed to update product');
+        fetchProducts(); // Refresh the product list
       }
     } catch (error) {
       console.error('Error updating product:', error);
-      toast.error(error.response?.data?.message || 'Failed to update product');
+      if (error.response?.status === 401) {
+        toast.error('Please sign in as admin');
+        navigate('/signin');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update product');
+      }
     }
   };
 

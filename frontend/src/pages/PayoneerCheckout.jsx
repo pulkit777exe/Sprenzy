@@ -6,6 +6,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, ArrowLeft, Loader } from 'lucide-react';
+import { api } from '../utils/api';
 
 export default function PayoneerCheckout() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function PayoneerCheckout() {
   const [subtotal, setSubtotal] = useState(0);
   const [shipping, setShipping] = useState(0);
   const [tax, setTax] = useState(0);
+  const [paymentDetails, setPaymentDetails] = useState(null);
   
   useEffect(() => {
     if (!user) {
@@ -31,6 +33,7 @@ export default function PayoneerCheckout() {
     } else {
       fetchCartProducts();
     }
+    fetchPaymentDetails();
   }, [user, navigate, location]);
   
   const fetchCartProducts = async () => {
@@ -80,36 +83,39 @@ export default function PayoneerCheckout() {
     return (subtotal + shipping + tax).toFixed(2);
   };
   
-  const handlePayoneerPayment = async () => {
+  const fetchPaymentDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/payment/details');
+      setPaymentDetails(response.data);
+    } catch (error) {
+      console.error('Error fetching payment details:', error);
+      toast.error('Failed to load payment details');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handlePayment = async () => {
     try {
       setProcessing(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/payment/payoneer`,
-        { 
-          items: products,
-          amount: calculateTotal(),
-          userId: user._id
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
+      const response = await api.post('/payment/payoneer/create', {
+        amount: paymentDetails.total,
+        currency: 'INR',
+        description: 'Order payment',
+        successUrl: `${window.location.origin}/payment/success`,
+        cancelUrl: `${window.location.origin}/payment/failure`
+      });
+
       if (response.data.success) {
-        // Redirect to Payoneer payment page
         window.location.href = response.data.paymentUrl;
       } else {
-        toast.error(response.data.message || 'Failed to initiate payment');
-        setProcessing(false);
+        toast.error('Failed to initiate payment');
       }
     } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast.error(error.response?.data?.message || 'Payment initiation failed');
+      console.error('Payment error:', error);
+      toast.error(error.response?.data?.message || 'Payment failed');
+    } finally {
       setProcessing(false);
     }
   };
@@ -259,7 +265,7 @@ export default function PayoneerCheckout() {
                 </div>
                 
                 <button
-                  onClick={handlePayoneerPayment}
+                  onClick={handlePayment}
                   disabled={processing}
                   className="w-full py-3 bg-primary text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center disabled:opacity-70"
                 >

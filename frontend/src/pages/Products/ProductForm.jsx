@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
+import { api } from '../../utils/api';
 import { toast } from 'react-hot-toast';
 import { Plus, Trash2, Image, Save, ArrowLeft } from 'lucide-react';
 import { LazyImage } from '../../components/LazyImage';
@@ -35,8 +35,8 @@ export default function ProductForm() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_API_URL}/product/${productId}`,
+      const response = await api.get(
+        `/product/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -144,63 +144,28 @@ export default function ProductForm() {
     try {
       setLoading(true);
       
-      // Validate required fields
-      if (!formData.title || !formData.description || !formData.price || 
-          !formData.imageUrl || !formData.category || !formData.brand) {
-        toast.error('Please fill all required fields');
-        return;
-      }
-      
-      // Filter out empty additional images
-      const filteredAdditionalImages = formData.additionalImages.filter(url => url.trim() !== '');
-      
-      // Filter out empty specifications
-      const filteredSpecifications = formData.specifications.filter(
-        spec => spec.name.trim() !== '' && spec.value.trim() !== ''
-      );
-      
-      const productData = {
+      const payload = {
         ...formData,
-        additionalImages: filteredAdditionalImages,
-        specifications: filteredSpecifications
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        specifications: formData.specifications.filter(spec => spec.name && spec.value)
       };
-      
-      const token = localStorage.getItem('token');
-      
+
       let response;
-      if (isEditMode) {
-        response = await axios.put(
-          `${import.meta.env.VITE_BACKEND_API_URL}/product/update-product/${productId}`,
-          productData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      } else {
-        response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_API_URL}/product/create-products`,
-          productData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      }
       
+      if (isEditMode) {
+        response = await api.put(`/product/update-product/${productId}`, payload);
+      } else {
+        response = await api.post('/product/create-products', payload);
+      }
+
       if (response.data.success) {
         toast.success(isEditMode ? 'Product updated successfully' : 'Product created successfully');
         navigate('/admin/products');
-      } else {
-        toast.error(response.data.message || 'Failed to save product');
       }
     } catch (error) {
-      console.error('Error saving product:', error);
-      toast.error('Error saving product');
+      console.error('Form submission error:', error);
+      toast.error(error.response?.data?.message || 'Failed to save product');
     } finally {
       setLoading(false);
     }

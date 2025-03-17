@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
 import { ShoppingBag } from 'lucide-react';
+import { api } from '../utils/api';
 
 export default function Cart() {
   const [products, setProducts] = useState([]);
@@ -29,38 +30,22 @@ export default function Cart() {
     const fetchCartProducts = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        
-        console.log("Fetching cart products with token:", token);
-        
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_API_URL}/user/cartProducts`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-        
-        console.log("Cart response:", response.data);
+        const response = await api.get('/user/cartProducts');
         
         if (response.data.success) {
-          // Make sure we're getting the full product data, not just IDs
           const cartItems = response.data.products || [];
-          
-          // Log the cart items to see their structure
-          console.log("Cart items:", cartItems);
-          
           setProducts(cartItems);
-          
-          // Calculate totals
           calculateTotals(cartItems);
         } else {
           toast.error(response.data.message || 'Failed to fetch cart products');
         }
       } catch (error) {
         console.error('Error fetching cart items:', error);
-        toast.error('Error fetching cart items');
+        if (error.response?.status === 401) {
+          navigate('/signin');
+        } else {
+          toast.error('Error fetching cart items');
+        }
       } finally {
         setLoading(false);
       }

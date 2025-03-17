@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
 import { LazyImage } from './LazyImage';
@@ -14,36 +14,31 @@ const ProductCard = ({ product }) => {
   const [addingToCart, setAddingToCart] = useState(false);
   
   const handleAddToCart = async (e) => {
-    e.preventDefault(); // Prevent navigation to product detail
-    e.stopPropagation(); // Stop event propagation
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('Please sign in to add items to your cart');
+      navigate('/signin');
+      return;
+    }
     
     try {
-      if (!user) {
-        toast.error('Please sign in to add items to your cart');
-        navigate('/signin');
-        return;
-      }
-      
       setAddingToCart(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API_URL}/user/addProduct/${product._id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.post(`/user/addProduct/${product._id}`, {
+        quantity: 1
+      });
       
       if (response.data.success) {
-        toast.success('Product added to cart successfully!');
+        toast.success('Product added to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (error.response?.status === 401) {
         navigate('/signin');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
       } else {
         toast.error(error.response?.data?.message || 'Failed to add to cart');
       }
