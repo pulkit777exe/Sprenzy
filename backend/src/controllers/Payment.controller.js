@@ -1,6 +1,7 @@
 import { UserModel } from '../models/User.models.js';
 import { ProductModel } from '../models/Product.models.js';
 import { OrderModel } from "../models/Order.models.js";
+import axios from 'axios';
 
 if (!process.env.PAYONEER_MERCHANT_ID || !process.env.PAYONEER_API_KEY) {
   console.warn('Warning: Payoneer credentials not properly configured. Payment functionality may be limited.');
@@ -125,107 +126,72 @@ export const createCheckoutSession = async (req, res) => {
 
 export const createPayoneerPayment = async (req, res) => {
   try {
-    const { items, amount, userId } = req.body;
-    
-    if (!items || !items.length || !amount) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid request. Items and amount are required."
-      });
-    }
-    
-    const order = new OrderModel({
-      user: userId || req.user._id,
-      products: items.map(item => ({
-        product: item.productId || item._id,
-        quantity: item.quantity || 1,
-        price: item.price || 0
-      })),
+    const { amount, currency, description, successUrl, cancelUrl } = req.body;
+    const userId = req.user._id;
+
+    // Create order first
+    const order = await OrderModel.create({
+      user: userId,
       totalAmount: amount,
       paymentStatus: 'PENDING',
       orderStatus: 'PENDING'
     });
-    
-    await order.save();
-    
-    // Generate a unique order ID
-    const orderId = order._id.toString();
-    
-    // Payoneer API integration
-    // Note: This is a simplified example. You'll need to use Payoneer's actual API
-    const payoneerPayload = {
-      merchant_id: process.env.PAYONEER_MERCHANT_ID,
-      amount: amount,
-      currency: 'INR',
-      order_id: orderId,
-      description: `Order #${orderId}`,
-      customer_email: req.user.email,
-      redirect_url: `${process.env.FRONTEND_URL}/payment/success?orderId=${orderId}`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment/failure?orderId=${orderId}`,
-      webhook_url: `${process.env.BACKEND_URL}/api/v1/payment/payoneer/webhook`
-    };
-    
-    // In a real implementation, you would call Payoneer's API here
-    // For now, we'll simulate a successful response
-    
-    // Simulate Payoneer payment URL
-    const paymentUrl = `https://payoneer.com/pay?order=${orderId}&amount=${amount}`;
-    
-    return res.status(200).json({
+
+    // Create Payoneer payment
+    const payoneerResponse = await axios.post(
+      'https://api.payoneer.com/v2/payments',
+      {
+        amount,
+        currency,
+        description,
+        order_id: order._id.toString(),
+        success_url: successUrl,
+        cancel_url: cancelUrl
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.PAYONEER_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return res.json({
       success: true,
-      orderId: orderId,
-      paymentUrl: paymentUrl
+      paymentUrl: payoneerResponse.data.redirect_url,
+      orderId: order._id
     });
   } catch (error) {
-    console.error('Payment error:', error);
+    console.error('Payoneer payment error:', error);
     return res.status(500).json({
       success: false,
-      message: "Error initiating payment",
-      error: error.message
+      message: 'Failed to create payment'
     });
   }
 };
 
-export const payoneerWebhook = async (req, res) => {
+export const handlePayoneerWebhook = async (req, res) => {
   try {
     const { order_id, status, transaction_id } = req.body;
-    
-    if (!order_id || !status) {
-      return res.status(400).json({ success: false, message: 'Invalid webhook data' });
+
+    const order = await OrderModel.findById(order_id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    
+
+    order.paymentStatus = status === 'COMPLETED' ? 'COMPLETED' : 'FAILED';
+    order.transactionId = transaction_id;
+    await order.save();
+
     if (status === 'COMPLETED') {
-      await OrderModel.findByIdAndUpdate(
-        order_id,
-        {
-          paymentStatus: 'COMPLETED',
-          orderStatus: 'PROCESSING',
-          transactionId: transaction_id,
-          paymentDetails: req.body
-        }
-      );
-      
-      const order = await OrderModel.findById(order_id);
-      if (order && order.user) {
-        await UserModel.findByIdAndUpdate(
-          order.user,
-          { userCart: [] }
-        );
-      }
-    } else if (status === 'FAILED') {
-      await OrderModel.findByIdAndUpdate(
-        order_id,
-        {
-          paymentStatus: 'FAILED',
-          paymentDetails: req.body
-        }
-      );
+      // Clear user's cart after successful payment
+      await UserModel.findByIdAndUpdate(order.user, { userCart: [] });
     }
-    
-    return res.status(200).json({ success: true });
+
+    return res.json({ success: true });
   } catch (error) {
-    console.error('Payoneer webhook error:', error);
-    return res.status(500).json({ success: false, error: error.message });
+    console.error('Webhook error:', error);
+    return res.status(500).json({ success: false });
   }
 };
 

@@ -743,53 +743,50 @@ export const addProductToCart = async (req, res) => {
     const { productId } = req.params;
     const { quantity = 1 } = req.body;
     const userId = req.user._id;
-    
+
+    // Validate product exists
     const product = await ProductModel.findById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: 'Product not found'
       });
     }
 
-    let userCart = await CartModel.findOne({ user: userId });
-    
-    if (!userCart) {
-      userCart = await CartModel.create({
-        user: userId,
-        items: []
+    // Find user and update cart
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
-    const existingItemIndex = userCart.items.findIndex(
-      item => item.product.toString() === productId
+
+    // Check if product already in cart
+    const existingCartItem = user.userCart.find(
+      item => item.productId.toString() === productId
     );
-    
-    if (existingItemIndex > -1) {
-      userCart.items[existingItemIndex].quantity += parseInt(quantity);
+
+    if (existingCartItem) {
+      existingCartItem.quantity += quantity;
     } else {
-      userCart.items.push({
-        product: productId,
-        quantity: parseInt(quantity)
+      user.userCart.push({
+        productId,
+        quantity
       });
     }
-    
-    userCart.totalPrice = userCart.items.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
-    }, 0);
-    
-    await userCart.save();
-    
+
+    await user.save();
+
     return res.status(200).json({
       success: true,
-      message: "Product added to cart successfully",
-      cart: userCart
+      message: 'Product added to cart successfully'
     });
   } catch (error) {
-    console.error("Error adding product to cart:", error);
+    console.error('Add to cart error:', error);
     return res.status(500).json({
       success: false,
-      message: "Failed to add product to cart",
+      message: 'Internal server error',
       error: error.message
     });
   }
