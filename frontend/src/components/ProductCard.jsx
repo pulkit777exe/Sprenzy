@@ -1,10 +1,9 @@
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router';
 import PropTypes from 'prop-types';
 import { LazyImage } from './LazyImage';
 
