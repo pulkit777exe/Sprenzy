@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 8000;
 app.post('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
 app.use(cors({
-  origin: ["https://sprenzy.netlify.app", "http://localhost:5173"],
+  origin: "https://sprenzy.netlify.app",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -28,23 +28,10 @@ import { productRouter } from './routes/Product.routes.js';
 import { paymentRouter } from './routes/Payment.routes.js';
 import { adminRouter } from './routes/Admin.routes.js';
 
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/product', productRouter);
 app.use('/api/v1/payment', paymentRouter);
 app.use('/api/v1/admin', adminRouter);
-
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date(),
-    env: process.env.NODE_ENV
-  });
-});
 
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
@@ -58,7 +45,6 @@ app.use((err, req, res, next) => {
 mongoose.connect(process.env.MONGODB_CONNECTION_URL)
   .then(() => {
     console.log('Connected to MongoDB');
-    console.log('Database URL:', process.env.MONGODB_CONNECTION_URL.replace(/:[^:]*@/, ':****@'));
     
     const migrateCartItems = async () => {
       try {

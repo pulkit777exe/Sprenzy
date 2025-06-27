@@ -31,30 +31,14 @@ A basic e-commerce web application built to simulate online shopping functionali
 
 ---
 
-## 📂 Project Structure (example)
-/sprenzy
-│
-├── /public
-│ ├── index.html
-│ └── styles.css
-│
-├── /admin
-│ ├── dashboard.html
-│ └── admin.js
-│
-├── /server
-│ ├── server.js
-│ └── routes.js
-│
-└── README.md
-
 ## 🔐 Admin Access
 
 To access the admin panel:
 
-1. Navigate to `/admin` or click the "Admin Login" link.
-2. Enter admin credentials (set in backend/config file).
-3. Start managing inventory and listings directly from the dashboard.
+1. Sign Up normally in the website.
+2. Manually set the admin user to true in database.
+3. Navigate to `/` and click on the profile icon and then go for "Admin Panel" button
+4. Start managing inventory and listings directly from the dashboard.
 
 ---
 
